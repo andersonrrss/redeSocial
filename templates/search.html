@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block script %}
+    <script src="../static/js/search.js"></script>
+{% endblock %}
+
+{% block body %}
+    <div class="w-1/2 h-screen">
+        <form action="/search" method="post" class="flex w-1/2 fixed top-0">
+            <input type="text" autocomplete="off" name="q" placeholder="procure seus amigos!" class="m-2 rounded-md border border-gray-300 p-1.5 w-full focus:border-purple-900 focus:outline-none">
+            <button class="flex btn text-white rounded-md w-10 m-2 p-3 justify-center align-middle">
+                <i class="fa-solid fa-magnifying-glass text-center"></i>
+            </button>
+        </form>
+    </div>
+{% endblock %}

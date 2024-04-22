@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Registrar
+{% endblock %}
+
+{% block body %}
+
+<div class="w-screen h-screen register-form bg-cover bg-no-repeat flex justify-center items-center flex-col relative bg-center" style="background-image: url('../static/css/backImages/predio.jpg');">
+    <div class="p-5 text-center glass-effect w-full sm:w-1/2 lg:w-1/3">
+        <h2 class="text-white text-xl font-bold mb-2">Registrar-se</h2>
+        <form action="/register" method="post" class="grid">
+            <input type="text" autocomplete="off" placeholder="Digite um nome de usuário" name="username" class="register-input" id="name">
+
+            <span class="hidden text-slate-400 mt-0 text-xs place-self-start" id="nameMSG">Seu nome deve conter pelo menos 6 caracteres </span>
+
+            <input type="email" placeholder="Digite seu email" name="email" class="register-input">
+            <input type="password" placeholder="Digite sua senha" name="senha" class="register-input" id="password">
+
+            <span class="hidden text-slate-400 mt-0 text-xs place-self-start" id="passMSG">Sua senha deve conter pelo menos 8 caracteres</span>
+
+            <input type="password" placeholder="Confirme sua senha" name="confirmation" class="register-input">
+            <button type="submit" class="m-1 mt-5 p-2 bg-purple-600 text-white rounded-md hover:shadow-xl hover:bg-purple-700 ">Registrar</button>
+           
+        </form>
+    </div>
+    <div>
+        <span class="text-white place-self-start m-3">Já tem uma conta? Clique aqui para <a href="/login" class="underline font-bold">entrar</a></span>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        document.querySelector(".navbar").classList.add("hidden")
+
+        const nameInput = document.querySelector("#name")
+        const passwordInput = document.querySelector("#password")
+
+        nameInput.addEventListener("focus", function(){
+            document.getElementById("nameMSG").classList.remove("hidden")
+        })
+        nameInput.addEventListener("blur", function(){
+            document.getElementById("nameMSG").classList.add("hidden")
+        })
+
+        passwordInput.addEventListener("focus", function(){
+            document.querySelector("#passMSG").classList.remove("hidden")
+        })
+        passwordInput.addEventListener("blur", function(){
+            document.querySelector("#passMSG").classList.add("hidden")
+        })
+    })
+</script>
+
+{% endblock %}

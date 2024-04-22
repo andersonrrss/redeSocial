@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ user["name"] }}
+{% endblock %}
+
+{% block body %}
+    <div class="bg-white p-10 w-1/2 h-full text-start">
+        <div>
+            <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-40 rounded-full">
+            <h3>{{ user["name"] }}</h3>
+        </div>
+        <div>
+            <span>{{ user["followers"] }}</span>
+            <span>{{ user["following"] }}</span>
+        </div>
+        <div>
+            <p>{{ user['bio'] }}</p>
+        </div>
+    </div>
+{% endblock %}
