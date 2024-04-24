@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ username }}
+{% endblock%}
+
+{% block body %}
+    <section class="h-full w-full flex">
+        <nav class="h-full place-self-start bg-gray-100 w-1/5 p-3">
+            <a href="/{{ username }}">
+                <button><i class="fa-solid fa-arrow-left"></i></button>
+            </a>
+            
+        </nav>
+        <main></main>
+    </section>
+{% endblock %}

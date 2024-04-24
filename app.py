@@ -17,6 +17,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
+
 @app.route("/")
 @login_required
 def index():
@@ -40,24 +41,29 @@ def chat():
 def search():
     return render_template("search.html")
 
+
 @app.route("/notifications")
 @login_required
 def notifications():
     return error("Pra fazer", 404)
 
-@app.route("/<username>")
+
+@app.route("/<username>", methods=["GET", "POST"])
 @login_required
 def user(username):
+    if request.method == "POST":
+        return edit()
     user = {}
     if not username:
         username = session["name"]
-    
+
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
-        result = db.execute("SELECT * FROM users WHERE nome = ?", (username,)).fetchone()
+        result = db.execute(
+            "SELECT * FROM users WHERE nome = ?", (username,)).fetchone()
         if result is None:
             return error("Página não encontrada", 404)
-        
+
         user = {
             "id": result[0],
             "name": result[1],
@@ -66,23 +72,109 @@ def user(username):
             "followers": result[6],
             "following": result[7]
         }
-        print(user)
 
-        if not user["bio"]:
-            user["bio"] = ""
         if not user["followers"]:
             user["followers"] = 0
+        else:
+            user["followers"] = len(user["followers"].split(","))
         if not user["following"]:
             user["following"] = 0
+        else:
+            user["following"] = len(user["following"].split(","))
 
     if user["id"] == session["user_id"]:
         return render_template("me.html", user=user)
     return render_template("user.html", user=user)
-    
 
-@app.route("/configs")
-def configs():
-    return render_template("configs.html")
+
+def edit():
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+        result = db.execute("SELECT * FROM users WHERE nome = ?",
+                            (session["name"],)).fetchone()
+        if result is None:
+            return error("Ocorreu um erro!", 404)
+        print(result)
+        user = {
+            "id": result[0],
+            "name": result[1],
+            "email": result[2],
+            "profile_pic": result[4],
+            "bio": result[5],
+        }
+
+    return render_template("edit.html")
+
+
+@app.route("/follow", methods=["GET", "POST"])
+@login_required
+def follow():
+    if request.method == "GET":
+        profile_id = request.args.get("user")  # Id do perfil
+    else:
+        profile_id = request.form.get("user")
+    user_id = session["user_id"]  # Id do usuário
+
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone()
+
+        # Obtendo o nome de usuário e a lista de seguidores
+        profile_name, followers_ids = profile_infos
+        # Obtendo a lista de seguidos do usuário
+        following_ids = db.execute("SELECT following_ids FROM users WHERE id = ?", (user_id,)).fetchone()[0]
+
+        # Convertendo a lista de seguidores e de seguidos para uma lista
+        followers_list = followers_ids.split(",") if followers_ids else []
+        following_list = following_ids.split(",") if following_ids else []
+
+        # Se ainda não seguir o método é get
+        if request.method == "GET":
+            # Adicionando o novo seguidor à lista de seguidores do perfil
+            followers_list.append(str(user_id))
+            # Adicionando o novo seguido à lista de seguidos do usuário
+            following_list.append(str(profile_id))
+        # Se já seguir então é post
+        else:
+             # Verificando se o usuário está na lista de seguidores
+            if str(user_id) in followers_list:
+                # Removendo o usuário da lista de seguidores
+                followers_list.remove(str(user_id))
+                # Removendo o perfil da lista de seguidos do usuário
+                following_list.remove(str(profile_id))
+
+        # Atualiza a tabela com a nova lista de seguidores do perfil
+        db.execute("UPDATE users SET followers_ids = ? WHERE id = ?",
+                   (",".join(followers_list), profile_id))
+        # Atualiza a tabela com a nova lista de seguidos do usuário
+        db.execute("UPDATE users SET following_ids = ? WHERE id = ?",
+                   (",".join(following_list), user_id))
+
+        conn.commit()
+
+        # Retorna que o usuário foi seguido
+        return redirect(f"/{profile_name}")
+        
+
+@app.route("/isFollowed")
+def isFollowed():
+    # Pega o id fornecido pelo fetch
+    profile_id = request.args.get("user")
+    # Se conecta ao banco de dados
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+        # Pega a lista de ids de seguidores do perfil
+
+        followers_list = db.execute(
+            "SELECT followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone()[0]
+        # Checa se existe uma lista de seguidores
+        if not followers_list:
+            return jsonify(is_followed=False)
+        followers_list = followers_list.split(",")
+        # Checa se o usuário está na lista e segue o perfil
+        if str(session["user_id"]) in followers_list:
+            return jsonify(is_followed=True)
+    return jsonify(is_followed=False)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -110,7 +202,6 @@ def login():
                     "SELECT id, nome, senha_hash FROM users WHERE nome = ?", (name_email,)).fetchone()
                 if result is None:
                     return error("Nome de usuário não encontrado")
-            print(result)
 
             user = {
                 "id": result[0],
@@ -178,7 +269,7 @@ def register():
 
     return render_template("register.html")
 
-    
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -186,12 +277,14 @@ def logout():
 
     return redirect("/login")
 
+
 @app.context_processor
 def inject_user():
     username = None
     if "user_id" in session:
         username = session["name"]
     return dict(username=username)
+
 
 if __name__ == "__main__":
     app.run()

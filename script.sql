@@ -2,9 +2,9 @@ CREATE TABLE users (
         id                   INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         nome                 VARCHAR(45) NOT NULL,
         email                VARCHAR(100) NOT NULL,
-        senha_hash           VARCHAR(250) NOT NULL,
+        senha_hash           VARCHAR(255) NOT NULL,
         profile_pic          TEXT NOT NULL DEFAULT '/images/profile/default.jpg',
-        bio                  DATETIME,
+        bio                  VARCHAR(150) DEFAULT 'Olá! Tudo bem?',
         followers_ids        TEXT,
         following_ids        TEXT,
         creation             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -40,7 +40,7 @@ CREATE TABLE messages (
         sender_id            INTEGER NOT NULL,
         message              TEXT,
         timestamp            DATETIME,
-        view               BOOLEAN DEFAULT 0,
+        view                 BOOLEAN DEFAULT 0, --Not Viewed
         parent_id            INTEGER DEFAULT 0,
         FOREIGN KEY (receiver_id) REFERENCES users(id),
         FOREIGN KEY (sender_id) REFERENCES users(id),
@@ -51,7 +51,7 @@ CREATE TABLE notifications (
         user_id              INTEGER NOT NULL,
         content              TEXT NOT NULL,
         notification_type    VARCHAR(50) NOT NULL,
-        view                 BOOLEAN NOT NULL DEFAULT 0,
+        view                 BOOLEAN NOT NULL DEFAULT 0, --Not viewed
         timestamp            DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
 );
