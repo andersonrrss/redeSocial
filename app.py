@@ -13,6 +13,10 @@ app.secret_key = 'a1b2c3'
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+# Configura a sessão
+app.config["SESSION_PERMANENT"] = True
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -41,22 +45,27 @@ def chat():
 def search():
     return render_template("search.html")
 
+@app.route("/getUsers")
+def getUser():
+    query = request.args.get("query")
+
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+
+        usernames = db.execute("SELECT id, nome FROM users WHERE nome LIKE ?", (query + "%",)).fetchall()
+        
+        return jsonify(usernames)
+
 
 @app.route("/notifications")
 @login_required
 def notifications():
     return error("Pra fazer", 404)
 
-
+# Mostra o usuário ou o perfil de algum outro usuário
 @app.route("/<username>", methods=["GET", "POST"])
 @login_required
 def user(username):
-    if request.method == "POST":
-        return edit()
-    user = {}
-    if not username:
-        username = session["name"]
-
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
         result = db.execute(
@@ -86,8 +95,11 @@ def user(username):
         return render_template("me.html", user=user)
     return render_template("user.html", user=user)
 
-
-def edit():
+# Editar o perfil do usuário
+@app.route("/<username>/edit")
+def edit(username):
+    if username != session["name"]:
+        return error("Você não pode fazer isso", 500)
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
         result = db.execute("SELECT * FROM users WHERE nome = ?",
@@ -95,6 +107,7 @@ def edit():
         if result is None:
             return error("Ocorreu um erro!", 404)
         print(result)
+        # Informações editáveis
         user = {
             "id": result[0],
             "name": result[1],
@@ -105,19 +118,21 @@ def edit():
 
     return render_template("edit.html")
 
-
+# Aceita ambos os métodos
 @app.route("/follow", methods=["GET", "POST"])
 @login_required
 def follow():
+    # Pega id do perfil independente do método
     if request.method == "GET":
         profile_id = request.args.get("user")  # Id do perfil
     else:
         profile_id = request.form.get("user")
+    
     user_id = session["user_id"]  # Id do usuário
 
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
-        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone()
+        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone() # Informações do perfil
 
         # Obtendo o nome de usuário e a lista de seguidores
         profile_name, followers_ids = profile_infos
@@ -128,7 +143,7 @@ def follow():
         followers_list = followers_ids.split(",") if followers_ids else []
         following_list = following_ids.split(",") if following_ids else []
 
-        # Se ainda não seguir o método é get
+        # Se o perfil não for seguido então o método recebido é GET
         if request.method == "GET":
             # Adicionando o novo seguidor à lista de seguidores do perfil
             followers_list.append(str(user_id))
@@ -136,7 +151,7 @@ def follow():
             following_list.append(str(profile_id))
         # Se já seguir então é post
         else:
-             # Verificando se o usuário está na lista de seguidores
+            # Verificando se o usuário está na lista de seguidores
             if str(user_id) in followers_list:
                 # Removendo o usuário da lista de seguidores
                 followers_list.remove(str(user_id))

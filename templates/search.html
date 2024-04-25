@@ -1,16 +1,21 @@
 {% extends "layout.html" %}
 
 {% block script %}
-    <script src="../static/js/search.js"></script>
+    <script src="../static/js/search.js" defer></script>
 {% endblock %}
 
 {% block body %}
     <div class="w-1/2 h-screen">
-        <form action="/search" method="post" class="flex w-1/2 fixed top-0">
-            <input type="text" autocomplete="off" name="q" placeholder="procure seus amigos!" class="m-2 rounded-md border border-gray-300 p-1.5 w-full focus:border-purple-900 focus:outline-none">
-            <button class="flex btn text-white rounded-md w-10 m-2 p-3 justify-center align-middle">
-                <i class="fa-solid fa-magnifying-glass text-center"></i>
-            </button>
-        </form>
+        <main class="flex justify-center items-center flex-col m-2 rounded-md border border-gray-300 p-1 fixed top-0 bg-white w-1/2" id="search_area">
+            <form action="/search" method="post" class="flex w-full p-1">
+                <input type="text" id="user_search" autocomplete="off" name="q" placeholder="procure seus amigos!" class="outline-none bg-transparent w-full">
+                <button id="search_btn" class="flex btn text-white rounded-md w-10 p-2 justify-center align-middle">
+                    <i class="fa-solid fa-magnifying-glass text-center"></i>
+                </button>
+            </form>
+            <section id="results" class="grid text-start w-full">
+                
+            </section>
+        </main>
     </div>
 {% endblock %}
