@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ profile_name }}
+{% endblock %}
+{% block script %}
+    <script src="../static/js/followsInfos.js" defer></script>
+{% endblock %}
+
+{% block body %}
+    <main class="h-screen w-1/2 bg-white">
+        <header class="w-full">
+            <nav class="w-full grid grid-cols-2 ">
+                <a href="/{{ profile_name }}/followers" class="text-center p-3 font-bold hover:bg-gray-200 ">
+                    Seguidores
+                </a>
+                <a href="/{{ profile_name }}/following" class="text-center bg-purple-200 p-3 font-bold hover:bg-gray-200">
+                    Seguindo
+                </a>
+            </nav>
+            
+        </header>
+        <section id="show_follows" class="text-center mt-2">
+                
+        </section>
+    </main>
+    <input type="hidden" value="{{ profile_name }}" id="username">
+    <input type="hidden" value="post" id="method">
+{% endblock %}
+

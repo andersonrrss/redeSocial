@@ -40,7 +40,7 @@ def chat():
     return error("Pra fazer", 404)
 
 
-@app.route("/search")
+@app.route("/search", methods=["GET", "POST"])
 @login_required
 def search():
     return render_template("search.html")
@@ -52,7 +52,7 @@ def getUser():
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
 
-        usernames = db.execute("SELECT id, nome FROM users WHERE nome LIKE ?", (query + "%",)).fetchall()
+        usernames = db.execute("SELECT id, nome FROM users WHERE nome LIKE ? LIMIT 20", (query + "%",)).fetchall()
         
         return jsonify(usernames)
 
@@ -118,15 +118,54 @@ def edit(username):
 
     return render_template("edit.html")
 
+# Seguidores do usuário
+@app.route("/<username>/followers")
+def followers(username):
+    return render_template("followers.html", profile_name=username)
+
+# Seguindo do usuário
+@app.route("/<username>/following")
+def following(username):
+    return render_template("following.html", profile_name=username)
+
+@app.route("/follows", methods=["GET", "POST"])
+def follows():
+    username = request.values.get("username") # Nome do usuário
+    if not username:
+        return error("Algo deu errado", 404)
+
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+
+        if request.method == "GET":
+            result = db.execute("SELECT followers_ids FROM users WHERE nome = ?", (username,)).fetchone() # Pega a lista de ids de seguidores
+        else:
+            result = db.execute("SELECT following_ids FROM users WHERE nome = ?", (username,)).fetchone() # Pega a lista de ids de seguidos
+
+        if result is None:
+            return error("Algo deu errado", 500)
+
+        # Checa se o usuário tem seguidores
+        if not result[0]:
+            return jsonify(has_follows=False)
+        
+        # Transforma a string em uma lista
+        follows_ids = result[0].split(",")
+
+        # Pega as informações necessárias dos seguidores ou seguidos
+        results = db.execute("SELECT id,nome,profile_pic FROM users WHERE id IN ({})".format(",".join(["?"] * len(follows_ids))), follows_ids).fetchall() 
+        
+        # Converter follows_infos em uma lista de dicionários para facilitar a serialização
+        follows_infos = [{"id": user[0], "nome": user[1], "profile_pic": user[2]} for user in results]
+       
+    return jsonify(has_follows=True, follows_infos=follows_infos)
+
 # Aceita ambos os métodos
 @app.route("/follow", methods=["GET", "POST"])
 @login_required
 def follow():
     # Pega id do perfil independente do método
-    if request.method == "GET":
-        profile_id = request.args.get("user")  # Id do perfil
-    else:
-        profile_id = request.form.get("user")
+    profile_id = request.values.get("user")
     
     user_id = session["user_id"]  # Id do usuário
 
