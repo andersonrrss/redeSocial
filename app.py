@@ -2,7 +2,7 @@ import sqlite3
 import re
 
 from helpers import error, login_required
-from flask import Flask, render_template, jsonify, redirect, request, session
+from flask import Flask, render_template, jsonify, redirect, request, session, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -45,15 +45,17 @@ def chat():
 def search():
     return render_template("search.html")
 
+
 @app.route("/getUsers")
 def getUser():
     query = request.args.get("query")
 
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
+        # Pega o nome dos usuários que mais parecem com o que foi digitado
+        usernames = db.execute(
+            "SELECT id, nome FROM users WHERE nome LIKE ? LIMIT 20", (query + "%",)).fetchall()
 
-        usernames = db.execute("SELECT id, nome FROM users WHERE nome LIKE ? LIMIT 20", (query + "%",)).fetchall()
-        
         return jsonify(usernames)
 
 
@@ -63,6 +65,8 @@ def notifications():
     return error("Pra fazer", 404)
 
 # Mostra o usuário ou o perfil de algum outro usuário
+
+
 @app.route("/<username>", methods=["GET", "POST"])
 @login_required
 def user(username):
@@ -96,10 +100,10 @@ def user(username):
     return render_template("user.html", user=user)
 
 # Editar o perfil do usuário
-@app.route("/<username>/edit")
-def edit(username):
-    if username != session["name"]:
-        return error("Você não pode fazer isso", 500)
+
+
+@app.route("/edit")
+def edit():
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
         result = db.execute("SELECT * FROM users WHERE nome = ?",
@@ -116,21 +120,78 @@ def edit(username):
             "bio": result[5],
         }
 
-    return render_template("edit.html")
+    return render_template("edit.html", user=user)
+
+## EDIÇÕES ##
+
+# Checa a disponibilidade de um nome de usário
+@app.route("/checkname")
+def checkname():
+    username = request.args.get("name")
+    # Informações para o JS
+    result = {
+        "isValid": False,
+        "exists": False
+    }
+    # Checa se o nome foi digitado
+    if username is not None and username.strip():
+        username = username.lower().strip() # Deixa o nome no formato padrão
+
+        # Checa se contém espaços dentro do nome
+        if not username.isspace() and username.find(" ") <= 0:
+            result["isValid"] = True
+        # Checa o tamanho do nome
+        if len(username) >= 6:
+            result["isValid"] = True
+
+        with sqlite3.connect("data.db") as conn:
+            db = conn.cursor()
+            names = db.execute(
+                "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
+            # Checa se o nome existe
+            if names is not None:
+                result["exists"] = True
+        # Retorna para o javascript
+        return jsonify(result)
+
+    return error("Ocorreu um erro", 500)
+
+# Atualiza o nome
+@app.route("/updatename")
+def updatename():
+    username = request.args.get("name")
+    if username:
+        username = username.lower().strip() # Garante que o nome esteja no padrão
+        # Checa se o nome é válido
+        if username.find(" ") <= 0 and len(username) >= 6:
+            with sqlite3.connect("data.db") as conn:
+                db = conn.cursor()
+                # Atualiza o banco de dados e a sessão
+                db.execute("UPDATE users SET nome = ? WHERE id = ?",
+                           (username, session["user_id"]))
+                session["name"] = username
+                conn.commit()
+            # Recarrega a página
+        return redirect("/edit")
 
 # Seguidores do usuário
+
+
 @app.route("/<username>/followers")
 def followers(username):
     return render_template("followers.html", profile_name=username)
 
 # Seguindo do usuário
+
+
 @app.route("/<username>/following")
 def following(username):
     return render_template("following.html", profile_name=username)
 
+
 @app.route("/follows", methods=["GET", "POST"])
 def follows():
-    username = request.values.get("username") # Nome do usuário
+    username = request.values.get("username")  # Nome do usuário
     if not username:
         return error("Algo deu errado", 404)
 
@@ -138,9 +199,13 @@ def follows():
         db = conn.cursor()
 
         if request.method == "GET":
-            result = db.execute("SELECT followers_ids FROM users WHERE nome = ?", (username,)).fetchone() # Pega a lista de ids de seguidores
+            # Pega a lista de ids de seguidores
+            result = db.execute(
+                "SELECT followers_ids FROM users WHERE nome = ?", (username,)).fetchone()
         else:
-            result = db.execute("SELECT following_ids FROM users WHERE nome = ?", (username,)).fetchone() # Pega a lista de ids de seguidos
+            # Pega a lista de ids de seguidos
+            result = db.execute(
+                "SELECT following_ids FROM users WHERE nome = ?", (username,)).fetchone()
 
         if result is None:
             return error("Algo deu errado", 500)
@@ -148,35 +213,41 @@ def follows():
         # Checa se o usuário tem seguidores
         if not result[0]:
             return jsonify(has_follows=False)
-        
+
         # Transforma a string em uma lista
         follows_ids = result[0].split(",")
 
         # Pega as informações necessárias dos seguidores ou seguidos
-        results = db.execute("SELECT id,nome,profile_pic FROM users WHERE id IN ({})".format(",".join(["?"] * len(follows_ids))), follows_ids).fetchall() 
-        
+        results = db.execute("SELECT id,nome,profile_pic FROM users WHERE id IN ({})".format(
+            ",".join(["?"] * len(follows_ids))), follows_ids).fetchall()
+
         # Converter follows_infos em uma lista de dicionários para facilitar a serialização
-        follows_infos = [{"id": user[0], "nome": user[1], "profile_pic": user[2]} for user in results]
-       
+        follows_infos = [{"id": user[0], "nome": user[1],
+                          "profile_pic": user[2]} for user in results]
+
     return jsonify(has_follows=True, follows_infos=follows_infos)
 
 # Aceita ambos os métodos
+
+
 @app.route("/follow", methods=["GET", "POST"])
 @login_required
 def follow():
     # Pega id do perfil independente do método
     profile_id = request.values.get("user")
-    
+
     user_id = session["user_id"]  # Id do usuário
 
     with sqlite3.connect("data.db") as conn:
         db = conn.cursor()
-        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone() # Informações do perfil
+        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (
+            profile_id,)).fetchone()  # Informações do perfil
 
         # Obtendo o nome de usuário e a lista de seguidores
         profile_name, followers_ids = profile_infos
         # Obtendo a lista de seguidos do usuário
-        following_ids = db.execute("SELECT following_ids FROM users WHERE id = ?", (user_id,)).fetchone()[0]
+        following_ids = db.execute(
+            "SELECT following_ids FROM users WHERE id = ?", (user_id,)).fetchone()[0]
 
         # Convertendo a lista de seguidores e de seguidos para uma lista
         followers_list = followers_ids.split(",") if followers_ids else []
@@ -208,7 +279,7 @@ def follow():
 
         # Retorna que o usuário foi seguido
         return redirect(f"/{profile_name}")
-        
+
 
 @app.route("/isFollowed")
 def isFollowed():

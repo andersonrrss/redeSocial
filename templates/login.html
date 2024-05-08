@@ -27,6 +27,9 @@
         document.addEventListener("DOMContentLoaded", function(){
             navbar = document.querySelector(".navbar")
             navbar.style.display = "none"
+            if (localStorage.getItem("searchHistory").length !== 0){
+                window.localStorage.removeItem("searchHistory")
+            }
         })
     </script>
 {% endblock %}
