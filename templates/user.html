@@ -27,8 +27,8 @@
                 </a>
             </div>
         </section>
-        <div class="w-1/2 p-1 mt-2 mb-2">
-            <p>{{ user['bio'] }}</p>
+        <div class="w-full p-1 mt-2 mb-2">
+            <p style="word-wrap: break-word;  overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
         </div>
         <form action="/follow?user=" id="followbtnForm" method="get">
             <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">

@@ -1,50 +1,50 @@
-html,body{
-    width: 100%;
-    height: 100%;
-    margin: 0;
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
 }
-body{
-    background-color: #e2e2e2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+body {
+  background-color: #e2e2e2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.navbar{
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translate(-50%);
-    transition: width 500ms;
+.navbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%);
+  transition: width 500ms;
 }
-.navbar-btn{
-    transition: all 500ms;
+.navbar-btn {
+  transition: all 500ms;
 }
 
-
-.btn{
-    transition: background-position 500ms;
-    background-image: linear-gradient(to bottom right, #cc00cc, #580064);
-    background-size: 150% 150%;
-    background-position: right bottom;
+.btn {
+  background-color: #7e22ce;
+  color: white;
+  border: none;
+  border-radius: 10%;
 }
 .btn:hover {
-    background-position: left bottom;
+  background-color: #6b21a8;
 }
-.register-input{
-    color: white;
-    margin: 0.5em 0;
-    padding: 0.25em;
-    border: #b6b6b6 solid 1px;
-    border-radius: 5px;
-    background-color: transparent;
+.register-input {
+  color: white;
+  margin: 0.5em 0;
+  padding: 0.25em;
+  border: #b6b6b6 solid 1px;
+  border-radius: 5px;
+  background-color: transparent;
 }
-.register-input:focus{
-    border: #ffffff solid 1px;
-    outline: none;
+.register-input:focus {
+  border: #ffffff solid 1px;
+  outline: none;
 }
 
-.glass-effect{
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    background-color: #f9f9f916;
-  }
+.glass-effect {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  background-color: #f9f9f916;
+}

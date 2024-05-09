@@ -2,7 +2,7 @@ import sqlite3
 import re
 
 from helpers import error, login_required
-from flask import Flask, render_template, jsonify, redirect, request, session, url_for
+from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -76,12 +76,12 @@ def user(username):
             "SELECT * FROM users WHERE nome = ?", (username,)).fetchone()
         if result is None:
             return error("Página não encontrada", 404)
-
+        bio = result[5].replace("\n", "<br>")
         user = {
             "id": result[0],
             "name": result[1],
             "profile_pic": result[4],
-            "bio": result[5],
+            "bio": bio,
             "followers": result[6],
             "following": result[7]
         }
@@ -125,6 +125,8 @@ def edit():
 ## EDIÇÕES ##
 
 # Checa a disponibilidade de um nome de usário
+
+
 @app.route("/checkname")
 def checkname():
     username = request.args.get("name")
@@ -135,33 +137,34 @@ def checkname():
     }
     # Checa se o nome foi digitado
     if username is not None and username.strip():
-        username = username.lower().strip() # Deixa o nome no formato padrão
+        print("O nome foi escrito")
+        username = username.lower().strip()  # Deixa o nome no formato padrão
 
         # Checa se contém espaços dentro do nome
-        if not username.isspace() and username.find(" ") <= 0:
-            result["isValid"] = True
-        # Checa o tamanho do nome
-        if len(username) >= 6:
+        if username.find(" ") <= 0 and len(username) >= 6:
+            print("O nome não contém espaços e tem o tamanho ideal")
             result["isValid"] = True
 
         with sqlite3.connect("data.db") as conn:
             db = conn.cursor()
-            names = db.execute(
+            names_results = db.execute(
                 "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
             # Checa se o nome existe
-            if names is not None:
+            if names_results is not None:
+                print("O nome já existe")
                 result["exists"] = True
         # Retorna para o javascript
-        return jsonify(result)
-
-    return error("Ocorreu um erro", 500)
+    print(result)
+    return jsonify(result)
 
 # Atualiza o nome
+
+
 @app.route("/updatename")
 def updatename():
     username = request.args.get("name")
     if username:
-        username = username.lower().strip() # Garante que o nome esteja no padrão
+        username = username.lower().strip()  # Garante que o nome esteja no padrão
         # Checa se o nome é válido
         if username.find(" ") <= 0 and len(username) >= 6:
             with sqlite3.connect("data.db") as conn:
@@ -172,7 +175,25 @@ def updatename():
                 session["name"] = username
                 conn.commit()
             # Recarrega a página
-        return redirect("/edit")
+            return redirect("/edit")
+        else:
+            return error("Ocorreu um erro", 500)
+
+# Atualizar a bio do usuário
+
+
+@app.route("/update_bio")
+def update_bio():
+    bio = request.values.get("bio")  # bio
+    if bio:
+        bio = bio.strip()  # Remove os espaços desnecessários
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+        # Atualiza o banco de dados
+        db.execute("UPDATE users SET bio = ? WHERE id = ?",
+                   (bio, session["user_id"]))
+    # Recarrega a página
+    return redirect("/edit")
 
 # Seguidores do usuário
 
