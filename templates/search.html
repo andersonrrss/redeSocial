@@ -1,28 +1,19 @@
 {% extends "layout.html" %} {% block script %}
 <script src="../static/js/search.js" defer></script>
 {% endblock %} {% block body %}
-<div class="w-1/2 h-screen">
-  <main
-    class="flex justify-center items-center flex-col m-2 rounded-md border border-gray-300 p-1 fixed top-0 bg-white w-1/2"
-    id="search_area"
-  >
-    <form action="/search" method="post" class="flex w-full p-1">
-      <input
-        type="text"
-        id="user_search"
-        autocomplete="off"
-        name="q"
-        placeholder="procure seus amigos!"
-        class="outline-none bg-transparent w-full"
-      />
-      <button
-        id="search_btn"
-        class="flex btn text-white rounded-md w-10 p-2 justify-center align-middle"
-      >
-        <i class="fa-solid fa-magnifying-glass text-center"></i>
-      </button>
+<section class="flex justify-center items-center w-screen h-screen">
+    <form class="form fixed top-0 m-2">
+        <i class="fa-solid fa-at"></i>
+        <input class="input text-sm bg-transparent w-full h-full outline-none px-2 py-3" placeholder="Procure seu amigos!" type="text" id="search_input">
+        <button class="px-3 text-xs hover:text-red-700 hidden" type="reset" id="reset">
+            <i class="fa-solid fa-x"></i>
+        </button>
+        <button id="search_btn" class="hover:text-purple-700">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
     </form>
-    <section id="results" class="grid text-start w-full"></section>
-  </main>
-</div>
+    <div id="results">
+        
+    </div>
+</section>
 {% endblock %}

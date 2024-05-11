@@ -1,14 +1,20 @@
 {% extends "layout.html" %} {% block title %} Entrar {% endblock %} {% block
-body %}
-<div
-  class="w-screen h-screen register-form bg-cover bg-no-repeat flex justify-center items-center flex-col relative bg-center"
-  style="background-image: url('../static/css/backImages/camera.jpg')"
->
-  <div
-    class="flex justify-center items-center p-5 text-center glass-effect w-full sm:w-1/2 lg:w-1/3"
+script %}
+<script src="../static/js/sing.js" defer></script>
+{% endblock %} {% block body %}
+<main class="w-screen h-screen flex bg-gray-200">
+  <img
+    src="../static/css/backImages/camera.jpg"
+    class="w-0 sm:w-1/3 md:w-1/2 h-0 sm:h-screen object-cover"
+  />
+  <section
+    class="flex justify-center items-center flex-col p-5 text-center w-full sm:w-2/3 md:w-1/2 sm:no-bg-img bg-cover bg-no-repeat bg-center"
+    style="background-image: url(../static/css/backImages/camera.jpg)"
   >
-    <div class="w-full m-0">
-      <h2 class="text-white text-xl font-bold mb-2">Bem-vindo de volta!</h2>
+    <div
+      class="m-0 text-black bg-gray-50 p-5 rounded-md w-full sm:1/2 md:w-3/4 shadow-lg"
+    >
+      <h2 class="text-xl font-bold mb-2">Bem-vindo de volta!</h2>
       <form action="/login" method="post" class="grid">
         <input
           type="text"
@@ -16,31 +22,42 @@ body %}
           name="name-email"
           class="register-input"
         />
-        <input
-          type="password"
-          placeholder="Digite sua senha"
-          name="senha"
-          class="register-input"
-        />
-        <span class="place-self-end underline text-sm text-white mb-4"
+
+        <div class="register-input flex justify-center items-center" id="divSenha">
+          <input
+            type="password"
+            placeholder="Digite sua senha"
+            name="senha"
+            class="outline-none w-full bg-transparent"
+            id="password"
+          />
+          <span
+            ><i
+              class="fa-regular fa-eye cursor-pointer text-purple-900 hidden"
+              id="olho"
+            ></i
+          ></span>
+        </div>
+        
+        <span class="place-self-end underline text-sm mb-4 text-purple-800"
           ><a href="/forgot">Esqueci minha senha</a></span
         >
         <button
           type="submit"
-          class="m-1 p-2 bg-purple-600 text-white rounded-md hover:shadow-xl hover:bg-purple-700"
+          class="m-1 p-2 bg-purple-600 rounded-md hover:shadow-xl hover:bg-purple-700 text-white"
         >
           Entrar
         </button>
       </form>
     </div>
-  </div>
-  <div>
-    <span class="text-white"
-      >Não tem uma conta? Clique aqui para se
-      <a href="/register" class="underline font-bold">registrar</a></span
-    >
-  </div>
-</div>
+    <div>
+      <span class="text-white sm:text-black"
+        >Não tem uma conta? Clique aqui para se
+        <a href="/register" class="underline font-bold">registrar</a></span
+      >
+    </div>
+  </section>
+</main>
 <!-- Oculta a navbar padrão do site -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {

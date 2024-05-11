@@ -1,11 +1,13 @@
-const user_search = document.querySelector("#user_search");
+const search_input = document.querySelector("#search_input");
 const search_btn = document.querySelector("#search_btn");
+const reset_btn = document.querySelector("#reset")
 const results = document.querySelector("#results");
 
-user_search.addEventListener("input", function () {
-  const query = user_search.value;
-  results.innerHTML = "";
-  fetch(`/getUsers?query=${query}`)
+search_input.addEventListener("input", function () {
+  const query = search_input.value;
+  if(!!query.length){
+    reset_btn.style.display = "block"
+    fetch(`/getUsers?query=${query}`)
     .then((response) => {
       if (!response.ok) {
         throw new Error(`erro ${response.status}`);
@@ -19,13 +21,17 @@ user_search.addEventListener("input", function () {
       });
       results.innerHTML = html;
     });
+  } else {
+    reset_btn.style.display = "none"
+  }
+  results.innerHTML = "";
 });
 
-user_search.addEventListener("focus", function () {
+search_input.addEventListener("focus", function () {
   let history = JSON.parse(window.localStorage.getItem("searchHistory")) || [];
   let html = "";
   history.forEach((query) => {
-    html += `<a href="/search" class="border-t border-gray-100 w-full p-1 hover:bg-gray-200 flex justify-between">
+    html += `<a href="/search" class=" w-full p-1 hover:bg-gray-200 flex justify-between">
             <span>${query}</span>
             <span place-self-end><i class="fa-solid fa-clock-rotate-left"></i></span>
         </a>`;
@@ -34,12 +40,12 @@ user_search.addEventListener("focus", function () {
 });
 
 search_btn.addEventListener("click", function () {
-  if (user_search.value.length !== 0) {
+  if (search_input.value.length !== 0) {
     let history =
       JSON.parse(window.localStorage.getItem("searchHistory")) || [];
 
-    if (!history.includes(user_search.value)) {
-      history.push(user_search.value);
+    if (!history.includes(search_input.value)) {
+      history.push(search_input.value);
       if (history.length > 10) {
         history.shift();
       }

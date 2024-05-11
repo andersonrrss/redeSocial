@@ -31,20 +31,70 @@ body {
   background-color: #6b21a8;
 }
 .register-input {
-  color: white;
+  color: black;
   margin: 0.5em 0;
   padding: 0.25em;
-  border: #b6b6b6 solid 1px;
+  border: #777777 solid 1px;
   border-radius: 5px;
   background-color: transparent;
 }
-.register-input:focus {
-  border: #ffffff solid 1px;
+.register-input:focus, .register-input.focado {
+  border: #353535 solid 1px;
   outline: none;
 }
 
-.glass-effect {
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  background-color: #f9f9f916;
+
+/* From uiverse.io by @satyamchaudharydev */
+/* removing default style of button */
+button {
+  border: none;
+  background: none;
+}
+
+/* styling of whole input container */
+.form {
+  --timing: 0.5s;
+  --width-of-input: 50%;
+  --height-of-input: 40px;
+  --border-height: 2px;
+  --input-bg: #fff;
+  --border-color: #8f2ee9;
+  --border-radius: 30px;
+  --after-border-radius: 1px;
+  position: relative;
+  width: var(--width-of-input);
+  height: var(--height-of-input);
+  display: flex;
+  align-items: center;
+  padding-inline: 0.8em;
+  border-radius: var(--border-radius);
+  transition: border-radius 0.5s ease;
+  background: var(--input-bg,#fff);
+}
+/* styling of animated border */
+.form:before {
+  content: "";
+  position: absolute;
+  background: var(--border-color);
+  transform: scaleX(0);
+  transform-origin: center;
+  width: 100%;
+  height: var(--border-height);
+  left: 0;
+  bottom: 0;
+  border-radius: 1px;
+  transition: transform var(--timing) ease;
+}
+/* Hover on Input */
+.form:focus-within {
+  border-radius: var(--after-border-radius);
+}
+/* here is code of animated border */
+.form:focus-within:before {
+  transform: scale(1);
+}
+/* close button shown when typing */
+input:not(:placeholder-shown) ~ .reset {
+  opacity: 1;
+  visibility: visible;
 }
