@@ -10,7 +10,7 @@ script %}
   >
     <div class="m-0 p-5 rounded-md w-full sm:1/2 md:w-3/4 shadow-lg bg-gray-50">
       <h2 class="text-xl font-bold mb-2">Registrar-se</h2>
-      <form action="/register" method="post" class="grid">
+      <form action="/register" method="post" class="grid" id="sing-form">
         <input
           type="text"
           autocomplete="off"
@@ -20,9 +20,9 @@ script %}
           id="name"
         />
         <span
-          class="hidden text-gray-500 mt-0 text-xs place-self-start"
+          class="hidden text-red-600 mt-0 text-xs place-self-start"
           id="nameMSG"
-          >Seu nome deve conter pelo menos 6 caracteres
+        >
         </span>
 
         <input
@@ -30,15 +30,24 @@ script %}
           placeholder="Digite seu email"
           name="email"
           class="register-input"
+          id="email"
         />
+        <span 
+        class="hidden text-red-600 mt-0 text-xs place-self-start"
+        id="emailMSG"
+        >
+      </span>
 
-        <div class="register-input flex justify-center items-center" id="divSenha">
+        <div
+          class="register-input flex justify-center items-center"
+          id="divSenha"
+        >
           <input
             type="password"
             placeholder="Digite sua senha"
             name="senha"
             id="password"
-            class="outline-none w-full bg-transparent"
+            class="outline-none w-full bg-transparent password"
           />
           <span
             ><i
@@ -48,20 +57,25 @@ script %}
           ></span>
         </div>
         <span
-          class="hidden text-gray-500 mt-0 text-xs place-self-start"
-          id="passMSG"
-          >Sua senha deve conter pelo menos 8 caracteres</span
+          class="hidden text-red-600 mt-0 text-xs place-self-start"
+          id="senhaMSG"
+          ></span
         >
         <input
           type="password"
           placeholder="Confirme sua senha"
           name="confirmation"
-          class="register-input"
+          id="confirmation"
+          class="register-input password"
         />
-        
+        <span class="hidden text-red-600 mt-0 text-xs place-self-start" id="confirmationMSG">
+          
+        </span>
+
         <button
           type="submit"
           class="m-1 mt-5 p-2 bg-purple-600 text-white rounded-md hover:shadow-xl hover:bg-purple-700"
+          id="sing_button"
         >
           Registrar
         </button>
@@ -82,23 +96,6 @@ script %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelector(".navbar").classList.add("hidden");
-
-    const nameInput = document.querySelector("#name");
-    const passwordInput = document.querySelector("#password");
-
-    nameInput.addEventListener("focus", function () {
-      document.getElementById("nameMSG").classList.remove("hidden");
-    });
-    nameInput.addEventListener("blur", function () {
-      document.getElementById("nameMSG").classList.add("hidden");
-    });
-
-    passwordInput.addEventListener("focus", function () {
-      document.querySelector("#passMSG").classList.remove("hidden");
-    });
-    passwordInput.addEventListener("blur", function () {
-      document.querySelector("#passMSG").classList.add("hidden");
-    });
   });
 </script>
 

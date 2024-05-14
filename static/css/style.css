@@ -21,28 +21,14 @@ body {
   transition: all 500ms;
 }
 
-.btn {
-  background-color: #7e22ce;
-  color: white;
-  border: none;
-  border-radius: 10%;
-}
-.btn:hover {
-  background-color: #6b21a8;
-}
-.register-input {
-  color: black;
-  margin: 0.5em 0;
-  padding: 0.25em;
-  border: #777777 solid 1px;
-  border-radius: 5px;
-  background-color: transparent;
-}
-.register-input:focus, .register-input.focado {
-  border: #353535 solid 1px;
-  outline: none;
-}
 
+.invalid-input {
+  border-color: #ff3f3f !important;
+}
+.disabled{
+  background-color: #865daa !important;
+  color: #b8b8b8 !important;
+}
 
 /* From uiverse.io by @satyamchaudharydev */
 /* removing default style of button */

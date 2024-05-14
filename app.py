@@ -122,7 +122,7 @@ def edit():
 
     return render_template("edit.html", user=user)
 
-## EDIÇÕES ##
+## CHECAGEM DE INFORMAÇÕES DE INPUTS
 
 # Checa a disponibilidade de um nome de usário
 
@@ -137,12 +137,10 @@ def checkname():
     }
     # Checa se o nome foi digitado
     if username is not None and username.strip():
-        print("O nome foi escrito")
         username = username.lower().strip()  # Deixa o nome no formato padrão
 
-        # Checa se contém espaços dentro do nome
+        # Checa se o nome é válido
         if username.find(" ") <= 0 and len(username) >= 6:
-            print("O nome não contém espaços e tem o tamanho ideal")
             result["isValid"] = True
 
         with sqlite3.connect("data.db") as conn:
@@ -151,11 +149,41 @@ def checkname():
                 "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
             # Checa se o nome existe
             if names_results is not None:
-                print("O nome já existe")
                 result["exists"] = True
         # Retorna para o javascript
-    print(result)
+
     return jsonify(result)
+
+# Checagem do email
+
+@app.route("/checkemail")
+def checkemail():
+    email = request.args.get("email")
+    # Informações para o JS
+    result = {
+        "isValid": False,
+        "exists": False
+    }
+
+    if email is not None and email.strip():
+        email = email.strip()
+        # Checa se o email é válido
+        if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
+            result["isValid"] = True
+        
+        with sqlite3.connect("data.db") as conn:
+            db = conn.cursor()
+            email_result = db.execute(
+                "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
+            # Checa se o email existe
+            if email_result is not None:
+                result["exists"] = True
+        
+    # Retorna para o javascript
+    return jsonify(result)
+
+
+## EDIÇÕES ##
 
 # Atualiza o nome
 
