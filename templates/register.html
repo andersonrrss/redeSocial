@@ -1,6 +1,7 @@
 {% extends "layout.html" %} {% block title %} Registrar {% endblock %} {% block
 script %}
 <script src="../static/js/sing.js" defer></script>
+<script src="../static/js/register_check.js" defer></script>
 {% endblock %} {% block body %}
 
 <main class="w-screen h-screen flex">
@@ -10,7 +11,7 @@ script %}
   >
     <div class="m-0 p-5 rounded-md w-full sm:1/2 md:w-3/4 shadow-lg bg-gray-50">
       <h2 class="text-xl font-bold mb-2">Registrar-se</h2>
-      <form action="/register" method="post" class="grid" id="sing-form">
+      <form action="/register" method="post" class="grid" id="register-form">
         <input
           type="text"
           autocomplete="off"

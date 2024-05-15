@@ -1,8 +1,8 @@
 {% extends "layout.html" %} {% block script %}
 <script src="../static/js/search.js" defer></script>
 {% endblock %} {% block body %}
-<section class="flex justify-center items-center w-screen h-screen">
-    <form class="form fixed top-0 m-2">
+<section class="flex flex-col items-center w-screen h-screen">
+    <form class="form m-2 w-11/12 sm:w-2/3 md:w-1/2">
         <i class="fa-solid fa-at"></i>
         <input class="input text-sm bg-transparent w-full h-full outline-none px-2 py-3" placeholder="Procure seu amigos!" type="text" id="search_input">
         <button class="px-3 text-xs hover:text-red-700 hidden" type="reset" id="reset">
@@ -12,7 +12,7 @@
             <i class="fa-solid fa-magnifying-glass"></i>
         </button>
     </form>
-    <div id="results">
+    <div id="results" class="bg-white rounded-xl m-1 grid w-11/12 sm:w-2/3 md:w-1/2 h-fit transition-all duration-200 hover:rounded-sm opacity-0">
         
     </div>
 </section>

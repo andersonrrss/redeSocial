@@ -16,9 +16,16 @@ search_input.addEventListener("input", function () {
     })
     .then((data) => {
       let html = "";
-      data.forEach((element) => {
-        html += `<a href="${element[1]}" class="border-t border-gray-100 w-full p-1 hover:bg-gray-200">@${element[1]}</a>`;
+      data.forEach((element,index) => {
+        if(index==0){
+          html += `<a href="${element[1]}" class="w-full p-2 hover:bg-purple-50 transition-all duration-200">@${element[1]}</a> `;
+        } else {
+          html += `<a href="${element[1]}" class="border-t border-purple-600 hover:bg-purple-50 w-full p-2 transition-all duration-200">@${element[1]}</a>`;
+        }
+        
       });
+      results.classList.remove("opacity-0")
+      results.classList.add('opacity-100');
       results.innerHTML = html;
     });
   } else {
@@ -31,7 +38,7 @@ search_input.addEventListener("focus", function () {
   let history = JSON.parse(window.localStorage.getItem("searchHistory")) || [];
   let html = "";
   history.forEach((query) => {
-    html += `<a href="/search" class=" w-full p-1 hover:bg-gray-200 flex justify-between">
+    html += `<a href="/search" class=" w-full p-3 hover:bg-gray-200 flex justify-between">
             <span>${query}</span>
             <span place-self-end><i class="fa-solid fa-clock-rotate-left"></i></span>
         </a>`;

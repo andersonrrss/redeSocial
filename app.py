@@ -162,7 +162,7 @@ def checkemail():
     # Informações para o JS
     result = {
         "isValid": False,
-        "exists": False
+        "exists": False,
     }
 
     if email is not None and email.strip():
@@ -174,13 +174,34 @@ def checkemail():
         with sqlite3.connect("data.db") as conn:
             db = conn.cursor()
             email_result = db.execute(
-                "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
+                "SELECT email,senha FROM users WHERE email = ?", (email,)).fetchone()
             # Checa se o email existe
             if email_result is not None:
                 result["exists"] = True
         
     # Retorna para o javascript
     return jsonify(result)
+ 
+@app.route("/checkPassword")
+def checkPassword():
+    name_email = request.args.get("identifier")
+    senha = request.args.get("senha")
+    searchFor = "nome"
+
+    if name_email:
+        name_email = name_email.strip().lower()
+
+    if re.match(EMAIL_PATTERN, name_email):
+        searchFor = "email"
+    
+    with sqlite3.connect("data.db") as conn:
+        db = conn.cursor()
+        result = db.execute(f"SELECT senha_hash FROM users WHERE {searchFor} = ? ", (name_email,)).fetchone()[0]
+
+        if check_password_hash(result, senha):
+            return jsonify(isRight = True)
+    
+    return jsonify(isRight = False)
 
 
 ## EDIÇÕES ##

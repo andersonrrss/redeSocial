@@ -1,6 +1,7 @@
 {% extends "layout.html" %} {% block title %} Entrar {% endblock %} {% block
 script %}
 <script src="../static/js/sing.js" defer></script>
+<script src="../static/js/login_check.js" defer></script>
 {% endblock %} {% block body %}
 <main class="w-screen h-screen flex bg-gray-200">
   <img
@@ -15,13 +16,15 @@ script %}
       class="m-0 text-black bg-gray-50 p-5 rounded-md w-full sm:1/2 md:w-3/4 shadow-lg"
     >
       <h2 class="text-xl font-bold mb-2">Bem-vindo de volta!</h2>
-      <form action="/login" method="post" class="grid">
+      <form action="/login" method="post" class="grid" id="login-form">
         <input
           type="text"
           placeholder="Digite seu email ou seu nome de usuário"
           name="name-email"
           class="register-input"
+          id="name-or-email"
         />
+        <span id="emailNameMSG" class="hidden text-red-600 mt-0 text-xs place-self-start"></span>
 
         <div class="register-input flex justify-center items-center" id="divSenha">
           <input
@@ -38,6 +41,9 @@ script %}
             ></i
           ></span>
         </div>
+        <span id="senhaMSG" class="hidden text-red-600 mt-0 text-xs place-self-start"">
+
+        </span>
         
         <span class="place-self-end underline text-sm mb-4 text-purple-800"
           ><a href="/forgot">Esqueci minha senha</a></span
@@ -45,6 +51,7 @@ script %}
         <button
           type="submit"
           class="m-1 p-2 bg-purple-600 rounded-md hover:shadow-xl hover:bg-purple-700 text-white"
+          id="sing_button"
         >
           Entrar
         </button>
@@ -63,9 +70,7 @@ script %}
   document.addEventListener("DOMContentLoaded", function () {
     navbar = document.querySelector(".navbar");
     navbar.style.display = "none";
-    if (localStorage.getItem("searchHistory").length !== 0) {
-      window.localStorage.removeItem("searchHistory");
-    }
+    window.localStorage.removeItem("searchHistory");
   });
 </script>
 {% endblock %}
