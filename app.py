@@ -20,6 +20,7 @@ Session(app)
 
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+DATABASE = "data.db"
 
 
 @app.route("/")
@@ -62,7 +63,12 @@ def getUser():
 @app.route("/notifications")
 @login_required
 def notifications():
-    return error("Pra fazer", 404)
+    with sqlite3.connect(DATABASE) as conn:
+        db = conn.cursor()
+        user_id = session["user_id"]
+        # Pega os 20 últimos notificações
+        notifications = db.execute("SELECT * FROM notifications WHERE user_id = ? LIMIT 20", (user_id,))
+        return render_template("notifications.html", notifications=notifications)
 
 # Mostra o usuário ou o perfil de algum outro usuário
 
@@ -70,7 +76,7 @@ def notifications():
 @app.route("/<username>", methods=["GET", "POST"])
 @login_required
 def user(username):
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         result = db.execute(
             "SELECT * FROM users WHERE nome = ?", (username,)).fetchone()
@@ -104,7 +110,7 @@ def user(username):
 
 @app.route("/edit")
 def edit():
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         result = db.execute("SELECT * FROM users WHERE nome = ?",
                             (session["name"],)).fetchone()
@@ -143,7 +149,7 @@ def checkname():
         if username.find(" ") <= 0 and len(username) >= 6:
             result["isValid"] = True
 
-        with sqlite3.connect("data.db") as conn:
+        with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
             names_results = db.execute(
                 "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
@@ -171,7 +177,7 @@ def checkemail():
         if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
             result["isValid"] = True
         
-        with sqlite3.connect("data.db") as conn:
+        with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
             email_result = db.execute(
                 "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
@@ -194,7 +200,7 @@ def checkPassword():
     if re.match(EMAIL_PATTERN, name_email):
         searchFor = "email"
     
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         result = db.execute(f"SELECT senha_hash FROM users WHERE {searchFor} = ? ", (name_email,)).fetchone()[0]
 
@@ -216,7 +222,7 @@ def updatename():
         username = username.lower().strip()  # Garante que o nome esteja no padrão
         # Checa se o nome é válido
         if username.find(" ") <= 0 and len(username) >= 6:
-            with sqlite3.connect("data.db") as conn:
+            with sqlite3.connect(DATABASE) as conn:
                 db = conn.cursor()
                 # Atualiza o banco de dados e a sessão
                 db.execute("UPDATE users SET nome = ? WHERE id = ?",
@@ -236,7 +242,7 @@ def update_bio():
     bio = request.values.get("bio")  # bio
     if bio:
         bio = bio.strip()  # Remove os espaços desnecessários
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         # Atualiza o banco de dados
         db.execute("UPDATE users SET bio = ? WHERE id = ?",
@@ -265,7 +271,7 @@ def follows():
     if not username:
         return error("Algo deu errado", 404)
 
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
 
         if request.method == "GET":
@@ -308,7 +314,7 @@ def follow():
 
     user_id = session["user_id"]  # Id do usuário
 
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (
             profile_id,)).fetchone()  # Informações do perfil
@@ -356,7 +362,7 @@ def isFollowed():
     # Pega o id fornecido pelo fetch
     profile_id = request.args.get("user")
     # Se conecta ao banco de dados
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         # Pega a lista de ids de seguidores do perfil
 
@@ -384,7 +390,7 @@ def login():
         if not senha:
             return error("Digite sua senha")
 
-        with sqlite3.connect("data.db") as conn:
+        with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
 
             if re.match(EMAIL_PATTERN, name_email):
@@ -443,7 +449,7 @@ def register():
         if senha != confirmation:
             return error("As senhas não coincidem", 400)
 
-        with sqlite3.connect("data.db") as conn:
+        with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
 
             checkName = db.execute(
