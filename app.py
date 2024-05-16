@@ -174,7 +174,7 @@ def checkemail():
         with sqlite3.connect("data.db") as conn:
             db = conn.cursor()
             email_result = db.execute(
-                "SELECT email,senha FROM users WHERE email = ?", (email,)).fetchone()
+                "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
             # Checa se o email existe
             if email_result is not None:
                 result["exists"] = True

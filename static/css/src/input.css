@@ -7,17 +7,7 @@
   .no-bg-img {
     background-image: none !important;
   }
-  .register-input {
-    @apply text-black;
-    margin: 0.5em 0;
-    padding: 0.25em;
-    @apply border border-gray-500 rounded;
-    background-color: transparent;
-  }
-  .register-input:focus, .register-input.focado {
-    @apply border-gray-600;
-    outline: none;
-  }
+
   .btn {
     background-color: #7e22ce;
     color: white;

@@ -33,7 +33,6 @@ name_or_email.addEventListener("input", async function(){
     }
 })
 
-
 document.querySelector("#login-form").addEventListener("submit", function(event){
     event.preventDefault()
 
@@ -42,6 +41,11 @@ document.querySelector("#login-form").addEventListener("submit", function(event)
     const senha_input = document.querySelector("#password")
     const senha_div = document.querySelector("#divSenha")
     const senha_MSG = document.querySelector("#senhaMSG")
+
+    senha_input.addEventListener("input", function(){
+        senha_div.classList.remove("invalid-input")
+        senha_MSG.classList.add("hidden")
+    })
 
     let empty_input = false
     if(email_name.value.length < 2){
