@@ -18,5 +18,48 @@
     background-color: #6b21a8;
   }
   
+}
 
+@layer components{
+  .notificacao{
+    display: flex;
+    justify-content: space-between;
+    @apply p-1 m-1 border-t border-gray-200;
+  }
+  .nova_notification{
+    @apply rounded-md;
+    border: solid 2px #c084fc;
+  }
+
+  @layer components{
+    .register-input {
+      outline: none;
+      color: black;
+      margin: 0.5em 0;
+      padding: 0.25em;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background-color: #ececec;
+      filter: drop-shadow(0px 1px 0px #efefef)
+        drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
+      transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
+    }
+    .register-input:focus, .register-input.focado {
+      box-shadow: 0px 0px 0px 2px #242424;
+    }
+    .register-input::placeholder, .password::placeholder{
+      color: #5c5c5c;
+    }
+    
+    .invalid-input {
+      border-color: #ff3f3f !important;
+      filter: drop-shadow(0px 1px 0px #efefef)
+      drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
+    }
+    .invalid-input:focus, .invalid-input.focado{
+      border: 1px solid transparent;
+      box-shadow: 0px 0px 0px 1px #ff3f3f !important;
+      background-color: transparent;
+    }
+  }
 }

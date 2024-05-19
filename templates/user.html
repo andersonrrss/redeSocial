@@ -9,35 +9,43 @@
 {% endblock %}
 
 {% block body %}
-<main class="bg-white p-10 w-1/2 h-full text-start">
-    <header>
-        <section class="grid grid-cols-2">
-            <div>
+<main class="bg-white w-full md:w-3/4 h-screen text-start py-10 px-5 md:px-20 flex flex-col">
+    <header class="border-b border-gray-400 pb-10">
+        <div class="flex">
+            <div class="mx-10">
                 <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-40 rounded-full">
-                <h2 class="text-lg font-semibold">@{{ user["name"] }}</h3>
             </div>
-            <div class="m-1 grid grid-cols-2 text-xl items-center text-center font-bold">
-                <a href="/{{ user['name'] }}/followers" class="text-center">
-                    <span>{{ user["followers"] }}</span><br>
-                    Seguidores
-                </a>
-                <a href="/{{ user['name'] }}/following" class="text-center">
-                    <span>{{ user["following"] }}</span><br>
-                    Seguindo
-                </a>
+            <div>
+                <h2 class="text-lg font-semibold">@{{ user["name"] }}</h2>
+                    <div class="grid grid-cols-2 items-center text-center font-semibold mt-2 text-sm sm:text-base">
+                        <a href="/{{ user['name'] }}/followers" class="text-center mr-10 grid sm:flex items-center">
+                            <span class="self-center sm:mr-2">{{ user["followers"] }} </span>
+                            Seguidores
+                        </a>
+                        <a href="/{{ user['name'] }}/following" class="text-center grid sm:flex items-center">
+                            <span class="self-center sm:mr-2">{{ user["following"] }} </span>
+                            Seguindo
+                        </a>
+                    </div>
+                    <div class="hidden sm:block w-full my-7">
+                        <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
+                    </div>
             </div>
-        </section>
-        <div class="w-full p-1 mt-2 mb-2">
-            <p style="word-wrap: break-word;  overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
+            
         </div>
-        <form action="/follow?user=" id="followbtnForm" method="get">
+        <div class="block sm:hidden w-full my-7">
+            <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
+        </div>
+        <form action="/follow" id="followbtnForm" method="get" class="mt-5">
             <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
             <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
                 Seguir
             </button>
         </form>
     </header>
-    <section>
-        
+    <section class="flex justify-center items-center h-full">
+        <span>
+            Sem publicações ainda
+        </span>
     </section>
 {% endblock %}

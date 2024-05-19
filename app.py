@@ -5,6 +5,7 @@ from helpers import error, login_required
 from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask_socketio import SocketIO, emit
 
 # Configure application
 app = Flask(__name__)
@@ -17,10 +18,20 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+socketio = SocketIO(app)
 
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 DATABASE = "data.db"
+
+@socketio.on("connect")
+def handle_connect():
+    user_id = session.get("user_id")
+    if user_id:
+        user_socket=request.sid
+        with sqlite3.connect(DATABASE) as conn:
+            db = conn.cursor()
+            db.execute("UPDATE users SET socket_id = ? WHERE id = ?", (user_socket, user_id))
 
 
 @app.route("/")
@@ -60,15 +71,34 @@ def getUser():
         return jsonify(usernames)
 
 
-@app.route("/notifications")
+@app.route("/notifications", methods=["GET", "POST"])
 @login_required
 def notifications():
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        user_id = session["user_id"]
-        # Pega os 20 últimos notificações
-        notifications = db.execute("SELECT * FROM notifications WHERE user_id = ? LIMIT 20", (user_id,))
-        return render_template("notifications.html", notifications=notifications)
+    if request.method == "POST":
+        with sqlite3.connect(DATABASE) as conn:
+            db = conn.cursor()
+            user_id = session["user_id"]
+            # Pega os 20 últimos notificações
+            result = db.execute(
+                "SELECT * FROM notifications WHERE user_id = ? ORDER BY timestamp DESC LIMIT 20", (user_id,)).fetchall()
+            if result is None:
+                return jsonify([])
+
+            notifications = []
+            for notification in result:
+                notifications.append({
+                    "content": notification[1],
+                    "notification_type": notification[2],
+                    "viewed": notification[3],
+                    "timestamp": notification[4]
+                })
+
+            db.execute(
+                "UPDATE notifications SET view = 1 WHERE user_id = ?", (session["user_id"],))
+
+            return jsonify(notifications)
+
+    return render_template("notifications.html")
 
 # Mostra o usuário ou o perfil de algum outro usuário
 
@@ -79,17 +109,19 @@ def user(username):
     with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
         result = db.execute(
-            "SELECT * FROM users WHERE nome = ?", (username,)).fetchone()
+            "SELECT id,socket_id,nome,profile_pic,bio,followers_ids,following_ids FROM users WHERE nome = ?", (username,)).fetchone()
         if result is None:
             return error("Página não encontrada", 404)
-        bio = result[5].replace("\n", "<br>")
+        print(result)
+        bio = result[4].replace("\n", "<br>")
         user = {
             "id": result[0],
-            "name": result[1],
-            "profile_pic": result[4],
+            "socket_id": result[1],
+            "name": result[2],
+            "profile_pic": result[3],
             "bio": bio,
-            "followers": result[6],
-            "following": result[7]
+            "followers": result[5],
+            "following": result[6]
         }
 
         if not user["followers"]:
@@ -112,23 +144,22 @@ def user(username):
 def edit():
     with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
-        result = db.execute("SELECT * FROM users WHERE nome = ?",
+        result = db.execute("SELECT id,nome,email, profile_pic, bio FROM users WHERE nome = ?",
                             (session["name"],)).fetchone()
         if result is None:
             return error("Ocorreu um erro!", 404)
-        print(result)
         # Informações editáveis
         user = {
             "id": result[0],
             "name": result[1],
             "email": result[2],
-            "profile_pic": result[4],
-            "bio": result[5],
+            "profile_pic": result[3],
+            "bio": result[4],
         }
 
     return render_template("edit.html", user=user)
 
-## CHECAGEM DE INFORMAÇÕES DE INPUTS
+# CHECAGEM DE INFORMAÇÕES DE INPUTS
 
 # Checa a disponibilidade de um nome de usário
 
@@ -162,6 +193,7 @@ def checkname():
 
 # Checagem do email
 
+
 @app.route("/checkemail")
 def checkemail():
     email = request.args.get("email")
@@ -176,7 +208,7 @@ def checkemail():
         # Checa se o email é válido
         if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
             result["isValid"] = True
-        
+
         with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
             email_result = db.execute(
@@ -184,10 +216,11 @@ def checkemail():
             # Checa se o email existe
             if email_result is not None:
                 result["exists"] = True
-        
+
     # Retorna para o javascript
     return jsonify(result)
- 
+
+
 @app.route("/checkPassword")
 def checkPassword():
     name_email = request.args.get("identifier")
@@ -199,15 +232,17 @@ def checkPassword():
 
     if re.match(EMAIL_PATTERN, name_email):
         searchFor = "email"
-    
+
     with sqlite3.connect(DATABASE) as conn:
         db = conn.cursor()
-        result = db.execute(f"SELECT senha_hash FROM users WHERE {searchFor} = ? ", (name_email,)).fetchone()[0]
+        searchFor = f"SELECT senha_hash FROM users WHERE {searchFor} = ? "
+        result = db.execute(searchFor, (name_email,)).fetchone()[0]
+        print(result)
 
         if check_password_hash(result, senha):
-            return jsonify(isRight = True)
-    
-    return jsonify(isRight = False)
+            return jsonify(isRight=True)
+
+    return jsonify(isRight=False)
 
 
 ## EDIÇÕES ##
@@ -321,6 +356,8 @@ def follow():
 
         # Obtendo o nome de usuário e a lista de seguidores
         profile_name, followers_ids = profile_infos
+        if not profile_name:
+            return error("Algo deu errado", 500)
         # Obtendo a lista de seguidos do usuário
         following_ids = db.execute(
             "SELECT following_ids FROM users WHERE id = ?", (user_id,)).fetchone()[0]
@@ -335,6 +372,12 @@ def follow():
             followers_list.append(str(user_id))
             # Adicionando o novo seguido à lista de seguidos do usuário
             following_list.append(str(profile_id))
+            # Envia notificação do novo seguidor para o perfil seguido
+            db.execute("INSERT INTO notifications (user_id, notification_type, content) VALUES (?, ?, ?)",
+                       (profile_id, "follow", f"{session["name"]} começou a seguir você!"))
+               
+            """ socketio.emit("new_follower_notification", {"follower_id": user_id}, to=profile_id) """
+
         # Se já seguir então é post
         else:
             # Verificando se o usuário está na lista de seguidores
@@ -352,7 +395,6 @@ def follow():
                    (",".join(following_list), user_id))
 
         conn.commit()
-
         # Retorna que o usuário foi seguido
         return redirect(f"/{profile_name}")
 
@@ -415,6 +457,8 @@ def login():
 
             session["user_id"] = user["id"]
             session["name"] = user["name"]
+            socketio.on
+            
 
         return redirect("/")
     else:
@@ -488,4 +532,4 @@ def inject_user():
 
 
 if __name__ == "__main__":
-    app.run()
+    socketio.run(app)

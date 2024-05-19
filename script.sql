@@ -1,5 +1,6 @@
 CREATE TABLE users (
         id                   INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        socket_id            TEXT DEFAULT NULL,
         nome                 VARCHAR(45) NOT NULL,
         email                VARCHAR(100) NOT NULL,
         senha_hash           VARCHAR(255) NOT NULL,
@@ -58,6 +59,7 @@ CREATE TABLE notifications (
 
 -- Criação de índices
 CREATE INDEX idx_users_id ON users (id);
+CREATE INDEX idx_user_socket_id ON users (socket_id);
 CREATE INDEX idx_nome ON users (nome);
 CREATE INDEX idx_email ON users (email);
 CREATE INDEX idx_senha ON users (senha_hash);

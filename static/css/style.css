@@ -5,7 +5,7 @@ body {
   margin: 0;
 }
 body {
-  background-color: #e2e2e2;
+  background-color: #eeeeee;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,17 +21,6 @@ body {
   transition: all 500ms;
 }
 
-
-.invalid-input {
-  border-color: #ff3f3f !important;
-  filter: drop-shadow(0px 1px 0px #efefef)
-  drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
-}
-.invalid-input:focus, .invalid-input.focado{
-  border: 1px solid transparent;
-  box-shadow: 0px 0px 0px 1px #ff3f3f !important;
-  background-color: transparent;
-}
 .disabled{
   background-color: #865daa !important;
   color: #b8b8b8 !important;
@@ -42,22 +31,6 @@ body {
 button {
   border: none;
   background: none;
-}
-.register-input {
-  outline: none;
-  color: black;
-  margin: 0.5em 0;
-  padding: 0.25em;
-  border: solid 1px #6b6b6b;
-  background-color: transparent;
-  filter: drop-shadow(0px 1px 0px #efefef)
-    drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
-  transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
-}
-.register-input:focus, .register-input.focado {
-  border: 1px solid transparent;
-  box-shadow: 0px 0px 0px 2px #242424;
-  background-color: transparent;
 }
 
 /* styling of whole input container */
