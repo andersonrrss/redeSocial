@@ -1,11 +1,12 @@
-import sqlite3
 import re
+import sqlite3
 
-from helpers import error, login_required
 from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask_socketio import SocketIO, emit
+from helpers import error, login_required
+from werkzeug.security import check_password_hash, generate_password_hash
+
 
 # Configure application
 app = Flask(__name__)
@@ -18,7 +19,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -27,12 +28,24 @@ DATABASE = "data.db"
 @socketio.on("connect")
 def handle_connect():
     user_id = session.get("user_id")
+    print(f"user {user_id} connected!!!")
     if user_id:
         user_socket=request.sid
         with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
             db.execute("UPDATE users SET socket_id = ? WHERE id = ?", (user_socket, user_id))
+            result = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+            print(f"{result}\n\n")
 
+@socketio.on('disconnect')
+def handle_disconnect():
+    user_id = session.get("user_id")
+    if user_id:
+        with sqlite3.connect(DATABASE) as conn:
+            db = conn.cursor()
+            db.execute("UPDATE users SET socket_id = NULL WHERE id = ?", (user_id,))
+            conn.commit()
+        print(f"User {user_id} disconnected\n")
 
 @app.route("/")
 @login_required
@@ -112,7 +125,6 @@ def user(username):
             "SELECT id,socket_id,nome,profile_pic,bio,followers_ids,following_ids FROM users WHERE nome = ?", (username,)).fetchone()
         if result is None:
             return error("Página não encontrada", 404)
-        print(result)
         bio = result[4].replace("\n", "<br>")
         user = {
             "id": result[0],
@@ -237,7 +249,6 @@ def checkPassword():
         db = conn.cursor()
         searchFor = f"SELECT senha_hash FROM users WHERE {searchFor} = ? "
         result = db.execute(searchFor, (name_email,)).fetchone()[0]
-        print(result)
 
         if check_password_hash(result, senha):
             return jsonify(isRight=True)
@@ -344,9 +355,7 @@ def follows():
 @app.route("/follow", methods=["GET", "POST"])
 @login_required
 def follow():
-    # Pega id do perfil independente do método
-    profile_id = request.values.get("user")
-
+    profile_id = request.values.get("user")  # Pega id do perfil independente do método
     user_id = session["user_id"]  # Id do usuário
 
     with sqlite3.connect(DATABASE) as conn:
@@ -375,8 +384,11 @@ def follow():
             # Envia notificação do novo seguidor para o perfil seguido
             db.execute("INSERT INTO notifications (user_id, notification_type, content) VALUES (?, ?, ?)",
                        (profile_id, "follow", f"{session["name"]} começou a seguir você!"))
-               
-            """ socketio.emit("new_follower_notification", {"follower_id": user_id}, to=profile_id) """
+
+            socket_id = db.execute("SELECT socket_id FROM users WHERE id = ?", (profile_id,)).fetchone()[0]
+            print(f"Sending notification to user {profile_id} at socket {socket_id}")
+            if socket_id:
+                socketio.emit("new_follower", {"follower_id": user_id, "follower_name": session["name"]}, room=socket_id)
 
         # Se já seguir então é post
         else:
@@ -457,7 +469,6 @@ def login():
 
             session["user_id"] = user["id"]
             session["name"] = user["name"]
-            socketio.on
             
 
         return redirect("/")
@@ -532,4 +543,4 @@ def inject_user():
 
 
 if __name__ == "__main__":
-    socketio.run(app)
+    socketio.run(app, debug=True)
