@@ -28,23 +28,24 @@ DATABASE = "data.db"
 @socketio.on("connect")
 def handle_connect():
     user_id = session.get("user_id")
-    print(f"user {user_id} connected!!!")
+    
     if user_id:
         user_socket=request.sid
         with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
-            db.execute("UPDATE users SET socket_id = ? WHERE id = ?", (user_socket, user_id))
-            result = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
-            print(f"{result}\n\n")
+            db.execute("UPDATE users SET socket_id = ? WHERE id = ?", (user_socket, user_id)) # Atualiza o banco de dados para a conexão atual do usuário
+
+        print(f"user {user_id} connected!!!")
 
 @socketio.on('disconnect')
 def handle_disconnect():
     user_id = session.get("user_id")
+    
     if user_id:
         with sqlite3.connect(DATABASE) as conn:
             db = conn.cursor()
-            db.execute("UPDATE users SET socket_id = NULL WHERE id = ?", (user_id,))
-            conn.commit()
+            db.execute("UPDATE users SET socket_id = NULL WHERE id = ?", (user_id,)) # Limpa a conexão do usuário
+
         print(f"User {user_id} disconnected\n")
 
 @app.route("/")
@@ -98,6 +99,7 @@ def notifications():
                 return jsonify([])
 
             notifications = []
+            # Organiza as informações das notificações
             for notification in result:
                 notifications.append({
                     "content": notification[1],
@@ -105,10 +107,10 @@ def notifications():
                     "viewed": notification[3],
                     "timestamp": notification[4]
                 })
-
+            # atualiza para que as notificações sejam vizualizadas
             db.execute(
                 "UPDATE notifications SET view = 1 WHERE user_id = ?", (session["user_id"],))
-
+            # Retorna par o frontend
             return jsonify(notifications)
 
     return render_template("notifications.html")
@@ -125,6 +127,7 @@ def user(username):
             "SELECT id,socket_id,nome,profile_pic,bio,followers_ids,following_ids FROM users WHERE nome = ?", (username,)).fetchone()
         if result is None:
             return error("Página não encontrada", 404)
+        # reformata a bio para o html
         bio = result[4].replace("\n", "<br>")
         user = {
             "id": result[0],
@@ -135,11 +138,12 @@ def user(username):
             "followers": result[5],
             "following": result[6]
         }
-
+        # A quantiade de seguidores do usuário
         if not user["followers"]:
             user["followers"] = 0
         else:
             user["followers"] = len(user["followers"].split(","))
+        # Quantidade de seguidos do usuário
         if not user["following"]:
             user["following"] = 0
         else:
@@ -242,6 +246,7 @@ def checkPassword():
     if name_email:
         name_email = name_email.strip().lower()
 
+    # Checa se o idenficador é o email ou o nome
     if re.match(EMAIL_PATTERN, name_email):
         searchFor = "email"
 
@@ -249,7 +254,7 @@ def checkPassword():
         db = conn.cursor()
         searchFor = f"SELECT senha_hash FROM users WHERE {searchFor} = ? "
         result = db.execute(searchFor, (name_email,)).fetchone()[0]
-
+        # Se a senha existir retorna true
         if check_password_hash(result, senha):
             return jsonify(isRight=True)
 
@@ -377,9 +382,8 @@ def follow():
 
         # Se o perfil não for seguido então o método recebido é GET
         if request.method == "GET":
-            # Adicionando o novo seguidor à lista de seguidores do perfil
+            # Atualizando o banco de dados
             followers_list.append(str(user_id))
-            # Adicionando o novo seguido à lista de seguidos do usuário
             following_list.append(str(profile_id))
             # Envia notificação do novo seguidor para o perfil seguido
             db.execute("INSERT INTO notifications (user_id, notification_type, content) VALUES (?, ?, ?)",
@@ -388,15 +392,15 @@ def follow():
             socket_id = db.execute("SELECT socket_id FROM users WHERE id = ?", (profile_id,)).fetchone()[0]
             print(f"Sending notification to user {profile_id} at socket {socket_id}")
             if socket_id:
+                # Envia a notificação de novo seguidor
                 socketio.emit("new_follower", {"follower_id": user_id, "follower_name": session["name"]}, room=socket_id)
 
         # Se já seguir então é post
         else:
             # Verificando se o usuário está na lista de seguidores
             if str(user_id) in followers_list:
-                # Removendo o usuário da lista de seguidores
+                # Atualizando o banco de dados
                 followers_list.remove(str(user_id))
-                # Removendo o perfil da lista de seguidos do usuário
                 following_list.remove(str(profile_id))
 
         # Atualiza a tabela com a nova lista de seguidores do perfil
