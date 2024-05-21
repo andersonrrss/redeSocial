@@ -96,7 +96,8 @@ script %}
 </main>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    document.querySelector(".navbar").classList.add("hidden");
+    let navbar = document.querySelector(".navbar")
+    navbar.style.display = "none"
   });
 </script>
 

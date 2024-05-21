@@ -80,3 +80,13 @@ search_btn.addEventListener("click", function () {
     }
   }
 });
+
+search_btn.addEventListener("mouseover", function(){
+  const paths = search_btn.querySelector("path")
+  paths.setAttribute("stroke", "#7101d3")
+})
+
+search_btn.addEventListener("mouseout", function(){
+  const paths = search_btn.querySelector("path")
+  paths.setAttribute("stroke", "black")
+})
