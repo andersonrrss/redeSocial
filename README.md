@@ -6,8 +6,6 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 20.05.2024`
+`ver - 23.05.2024`
 
-- Novos ícones em SVG para melhoria do desempenho do site
-
-- Função de notificações de novos seguidores completa
+- Suporte para a biblioteca SQLAlchemy

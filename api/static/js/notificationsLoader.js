@@ -8,7 +8,7 @@ fetch("/notifications", {
   .then((response) => response.json())
   .then((data) => {
     const notifications = document.querySelector("#notifications");
-    console.log(data)
+
     if (!!data.length) {
       let html = "";
       data.forEach((item) => {

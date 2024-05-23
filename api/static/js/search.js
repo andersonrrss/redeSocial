@@ -26,9 +26,9 @@ search_input.addEventListener("input", function () {
         let html = "";
         data.forEach((element, index) => {
           if (index == 0) {
-            html += `<a href="${element[1]}" class="w-full p-2 hover:bg-purple-50 transition-all duration-200"><span class="font-semibold">@</span> ${element[1]}</a> `;
+            html += `<a href="${element}" class="w-full p-2 hover:bg-purple-50 transition-all duration-200"><span class="font-semibold">@</span> ${element}</a> `;
           } else {
-            html += `<a href="${element[1]}" class=" hover:bg-purple-50 w-full p-2 transition-all duration-200"><span class="font-semibold">@</span> ${element[1]}</a>`;
+            html += `<a href="${element}" class=" hover:bg-purple-50 w-full p-2 transition-all duration-200"><span class="font-semibold">@</span> ${element}</a>`;
           }
         });
         results.classList.remove("hidden");

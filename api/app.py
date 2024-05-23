@@ -1,13 +1,11 @@
 import re
-import sqlite3
-import sys
 
 from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
-from models import db
 from helpers import error, login_required
+from models import db, User, Message, Notification, Comment, Post
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -20,32 +18,32 @@ db.init_app(app)
 Session(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-DATABASE = "data.db"
+
 
 @socketio.on("connect")
 def handle_connect():
     user_id = session.get("user_id")
-    
-    if user_id:
-        user_socket=request.sid
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
-            db.execute("UPDATE users SET socket_id = ? WHERE id = ?", (user_socket, user_id)) # Atualiza o banco de dados para a conexão atual do usuário
+    user = User.query.filter_by(id=user_id).first()
+    if user:
+        user.socket_id = request.sid
+        db.session.commit()
 
         print(f"user {user_id} connected!!!")
+
 
 @socketio.on('disconnect')
 def handle_disconnect():
     user_id = session.get("user_id")
-    
-    if user_id:
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
-            db.execute("UPDATE users SET socket_id = NULL WHERE id = ?", (user_id,)) # Limpa a conexão do usuário
+    user = User.query.filter_by(id=user_id)
+    if user:
+        user.socket_id = None
+        db.session.commit()
 
         print(f"User {user_id} disconnected\n")
+
 
 @app.route("/")
 @login_required
@@ -75,42 +73,34 @@ def search():
 def getUser():
     query = request.args.get("query")
 
-    with sqlite3.connect("data.db") as conn:
-        db = conn.cursor()
-        # Pega o nome dos usuários que mais parecem com o que foi digitado
-        usernames = db.execute(
-            "SELECT id, nome FROM users WHERE nome LIKE ? LIMIT 20", (query + "%",)).fetchall()
+    usernames = User.query.filter(User.nome.ilike(f"{query}%")).limit(20).all()
+    usernames = [user.nome for user in usernames]
 
-        return jsonify(usernames)
+    return jsonify(usernames)
 
 
 @app.route("/notifications", methods=["GET", "POST"])
 @login_required
 def notifications():
     if request.method == "POST":
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
-            user_id = session["user_id"]
-            # Pega os 20 últimos notificações
-            result = db.execute(
-                "SELECT * FROM notifications WHERE user_id = ? ORDER BY timestamp DESC LIMIT 20", (user_id,)).fetchall()
-            if result is None:
-                return jsonify([])
+        user_id = session["user_id"]
+        result = Notification.query.filter_by(user_id=user_id).limit(20).all()
 
-            notifications = []
-            # Organiza as informações das notificações
-            for notification in result:
-                notifications.append({
-                    "content": notification[1],
-                    "notification_type": notification[2],
-                    "viewed": notification[3],
-                    "timestamp": notification[4]
-                })
-            # atualiza para que as notificações sejam vizualizadas
-            db.execute(
-                "UPDATE notifications SET view = 1 WHERE user_id = ?", (session["user_id"],))
-            # Retorna par o frontend
-            return jsonify(notifications)
+        if result is None:
+            return jsonify([])
+        notifications = []
+        # Organiza as informações das notificações
+        for notification in result:
+            notifications.append({
+                "content": notification.content,
+                "notification_type": notification.notification_type,
+                "viewed": notification.view,
+                "timestamp": notification.timestamp
+            })
+            notification.view = True
+        db.session.commit()
+        # Retorna par o frontend
+        return jsonify(notifications)
 
     return render_template("notifications.html")
 
@@ -120,33 +110,29 @@ def notifications():
 @app.route("/<username>", methods=["GET", "POST"])
 @login_required
 def user(username):
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        result = db.execute(
-            "SELECT id,socket_id,nome,profile_pic,bio,followers_ids,following_ids FROM users WHERE nome = ?", (username,)).fetchone()
-        if result is None:
-            return error("Página não encontrada", 404)
-        # reformata a bio para o html
-        bio = result[4].replace("\n", "<br>")
-        user = {
-            "id": result[0],
-            "socket_id": result[1],
-            "name": result[2],
-            "profile_pic": result[3],
-            "bio": bio,
-            "followers": result[5],
-            "following": result[6]
-        }
-        # A quantiade de seguidores do usuário
-        if not user["followers"]:
-            user["followers"] = 0
-        else:
-            user["followers"] = len(user["followers"].split(","))
-        # Quantidade de seguidos do usuário
-        if not user["following"]:
-            user["following"] = 0
-        else:
-            user["following"] = len(user["following"].split(","))
+    result = User.query.filter_by(nome=username).first()
+    if result is None:
+        return error("Página não encontrada", 404)
+    # Organiza o json para o javascript
+    user = {
+        "id": result.id,
+        "socket_id": result.socket_id,
+        "name": result.nome,
+        "profile_pic": result.profile_pic,
+        "bio": result.bio.replace("\n", "<br>"),
+        "followers": result.followers_ids,
+        "following": result.following_ids
+    }
+    # Formata a quantiade de seguidores
+    if user["followers"]:
+        user["followers"] = len(user["followers"].split(","))
+    else:
+        user["followers"] = 0
+
+    if user["following"]:
+        user["following"] = len(user["following"].split(","))
+    else:
+        user["following"] = 0
 
     if user["id"] == session["user_id"]:
         return render_template("me.html", user=user)
@@ -157,21 +143,15 @@ def user(username):
 
 @app.route("/edit")
 def edit():
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        result = db.execute("SELECT id,nome,email, profile_pic, bio FROM users WHERE nome = ?",
-                            (session["name"],)).fetchone()
-        if result is None:
-            return error("Ocorreu um erro!", 404)
-        # Informações editáveis
-        user = {
-            "id": result[0],
-            "name": result[1],
-            "email": result[2],
-            "profile_pic": result[3],
-            "bio": result[4],
-        }
-
+    user = User.query.filter_by(id=session["user_id"]).first()
+    # Informações editáveis
+    user = {
+        "id": user.id,
+        "name": user.nome,
+        "email": user.email,
+        "profile_pic": user.profile_pic,
+        "bio": user.bio,
+    }
     return render_template("edit.html", user=user)
 
 # CHECAGEM DE INFORMAÇÕES DE INPUTS
@@ -195,13 +175,8 @@ def checkname():
         if username.find(" ") <= 0 and len(username) >= 6:
             result["isValid"] = True
 
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
-            names_results = db.execute(
-                "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
-            # Checa se o nome existe
-            if names_results is not None:
-                result["exists"] = True
+        if User.query.filter_by(nome=username).first():
+            result["exists"] = True
         # Retorna para o javascript
 
     return jsonify(result)
@@ -224,13 +199,8 @@ def checkemail():
         if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
             result["isValid"] = True
 
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
-            email_result = db.execute(
-                "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
-            # Checa se o email existe
-            if email_result is not None:
-                result["exists"] = True
+        if User.query.filter_by(email=email).first():
+            result["exists"] = True
 
     # Retorna para o javascript
     return jsonify(result)
@@ -240,22 +210,19 @@ def checkemail():
 def checkPassword():
     name_email = request.args.get("identifier")
     senha = request.args.get("senha")
-    searchFor = "nome"
 
     if name_email:
         name_email = name_email.strip().lower()
 
-    # Checa se o idenficador é o email ou o nome
+    # pega as informações do usuário por nome ou email
     if re.match(EMAIL_PATTERN, name_email):
-        searchFor = "email"
+        user = User.query.filter_by(email=name_email).first()
+    else:
+        user = User.query.filter_by(nome=name_email).first()
 
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        searchFor = f"SELECT senha_hash FROM users WHERE {searchFor} = ? "
-        result = db.execute(searchFor, (name_email,)).fetchone()[0]
-        # Se a senha existir retorna true
-        if check_password_hash(result, senha):
-            return jsonify(isRight=True)
+    # Verifica a senha
+    if user and check_password_hash(user.senha_hash, senha):
+        return (jsonify(isRight=True))
 
     return jsonify(isRight=False)
 
@@ -272,14 +239,13 @@ def updatename():
         username = username.lower().strip()  # Garante que o nome esteja no padrão
         # Checa se o nome é válido
         if username.find(" ") <= 0 and len(username) >= 6:
-            with sqlite3.connect(DATABASE) as conn:
-                db = conn.cursor()
-                # Atualiza o banco de dados e a sessão
-                db.execute("UPDATE users SET nome = ? WHERE id = ?",
-                           (username, session["user_id"]))
+            user = User.query.filter_by(id=session["user_id"]).first()
+            if user:
                 session["name"] = username
-                conn.commit()
+                user.nome = username
+                db.session.commit()
             # Recarrega a página
+
             return redirect("/edit")
         else:
             return error("Ocorreu um erro", 500)
@@ -292,11 +258,10 @@ def update_bio():
     bio = request.values.get("bio")  # bio
     if bio:
         bio = bio.strip()  # Remove os espaços desnecessários
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        # Atualiza o banco de dados
-        db.execute("UPDATE users SET bio = ? WHERE id = ?",
-                   (bio, session["user_id"]))
+        user = User.query.filter_by(id=session["user_id"]).first()
+        if user:
+            user.bio = bio
+            db.session.commit()
     # Recarrega a página
     return redirect("/edit")
 
@@ -321,35 +286,29 @@ def follows():
     if not username:
         return error("Algo deu errado", 404)
 
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-
-        if request.method == "GET":
-            # Pega a lista de ids de seguidores
-            result = db.execute(
-                "SELECT followers_ids FROM users WHERE nome = ?", (username,)).fetchone()
-        else:
-            # Pega a lista de ids de seguidos
-            result = db.execute(
-                "SELECT following_ids FROM users WHERE nome = ?", (username,)).fetchone()
-
-        if result is None:
-            return error("Algo deu errado", 500)
-
+    result = User.query.filter_by(nome=username).first()
+    if result is None:
+        return error("Algo deu errado", 500)
+    # GET pede os seguidores
+    if request.method == "GET":
         # Checa se o usuário tem seguidores
-        if not result[0]:
+        if not result.followers_ids:
+            return jsonify(has_follows=False)
+        # Transforma a string em uma lista
+        follows_ids = result.followers_ids.split(",")
+    # POST pede os seguidos
+    else:
+        # Checa se o usuário tem seguidores
+        if not result.following_ids:
             return jsonify(has_follows=False)
 
         # Transforma a string em uma lista
-        follows_ids = result[0].split(",")
-
-        # Pega as informações necessárias dos seguidores ou seguidos
-        results = db.execute("SELECT id,nome,profile_pic FROM users WHERE id IN ({})".format(
-            ",".join(["?"] * len(follows_ids))), follows_ids).fetchall()
-
-        # Converter follows_infos em uma lista de dicionários para facilitar a serialização
-        follows_infos = [{"id": user[0], "nome": user[1],
-                          "profile_pic": user[2]} for user in results]
+        follows_ids = result.following_ids.split(",")
+    follows = User.query.filter(User.id.in_(follows_ids)).with_entities(
+        User.id, User.nome, User.profile_pic).all()
+    # Converter follows_infos em uma lista de dicionários para facilitar a serialização
+    follows_infos = [{"id": user.id, "nome": user.nome,
+                      "profile_pic": user.profile_pic} for user in follows]
 
     return jsonify(has_follows=True, follows_infos=follows_infos)
 
@@ -359,79 +318,76 @@ def follows():
 @app.route("/follow", methods=["GET", "POST"])
 @login_required
 def follow():
-    profile_id = request.values.get("user")  # Pega id do perfil independente do método
+    # Pega id do perfil independente do método
+    profile_id = request.values.get("user")
     user_id = session["user_id"]  # Id do usuário
 
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        profile_infos = db.execute("SELECT nome,followers_ids FROM users WHERE id = ?", (
-            profile_id,)).fetchone()  # Informações do perfil
+    profile_infos = User.query.filter_by(id=profile_id).with_entities(
+        User.nome, User.followers_ids, User.socket_id).first()
 
-        # Obtendo o nome de usuário e a lista de seguidores
-        profile_name, followers_ids = profile_infos
-        if not profile_name:
-            return error("Algo deu errado", 500)
-        # Obtendo a lista de seguidos do usuário
-        following_ids = db.execute(
-            "SELECT following_ids FROM users WHERE id = ?", (user_id,)).fetchone()[0]
+    # Obtendo o nome de usuário e a lista de seguidores
+    profile_name, followers_ids, profile_socket = profile_infos.nome, profile_infos.followers_ids, profile_infos.socket_id
+    if not profile_name:
+        return error("Algo deu errado", 500)
+    # Obtendo a lista de seguidos do usuário
+    following_ids = User.query.filter_by(
+        id=user_id).with_entities(User.following_ids).first()[0]
 
-        # Convertendo a lista de seguidores e de seguidos para uma lista
-        followers_list = followers_ids.split(",") if followers_ids else []
-        following_list = following_ids.split(",") if following_ids else []
+    # Convertendo a lista de seguidores e de seguidos para uma lista
+    followers_list = followers_ids.split(",") if followers_ids else []
+    following_list = following_ids.split(",") if following_ids else []
 
-        # Se o perfil não for seguido então o método recebido é GET
-        if request.method == "GET":
+    # Se o perfil não for seguido então o método recebido é GET
+    if request.method == "GET":
+        # Atualizando o banco de dados
+        followers_list.append(str(user_id))
+        following_list.append(str(profile_id))
+        # Envia notificação do novo seguidor para o perfil seguido
+        new_notification = Notification(
+            content=f"@{profile_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
+        db.session.add(new_notification)
+        db.session.commit()
+
+        if profile_socket is not None:
+            # Envia a notificação de novo seguidor
+            print(f"Sending notification to user {profile_id} at socket {profile_socket}")
+            socketio.emit("new_follower", {
+                          "follower_id": user_id, "follower_name": session["name"]}, room=profile_socket)
+
+    # Se já seguir então é POST
+    else:
+        # Verificando se o usuário está na lista de seguidores
+        if str(user_id) in followers_list:
             # Atualizando o banco de dados
-            followers_list.append(str(user_id))
-            following_list.append(str(profile_id))
-            # Envia notificação do novo seguidor para o perfil seguido
-            db.execute("INSERT INTO notifications (user_id, notification_type, content) VALUES (?, ?, ?)",
-                       (profile_id, "follow", f"{session["name"]} começou a seguir você!"))
+            followers_list.remove(str(user_id))
+            following_list.remove(str(profile_id))
 
-            socket_id = db.execute("SELECT socket_id FROM users WHERE id = ?", (profile_id,)).fetchone()[0]
-            print(f"Sending notification to user {profile_id} at socket {socket_id}")
-            if socket_id:
-                # Envia a notificação de novo seguidor
-                socketio.emit("new_follower", {"follower_id": user_id, "follower_name": session["name"]}, room=socket_id)
+    # Atualiza a tabela com a nova lista de seguidores do perfil
+    followed = User.query.filter_by(id=profile_id).first()
+    followed.followers_ids = ",".join(followers_list)
+    # Atualiza a tabela com a nova lista de seguidos do usuário
+    follower = User.query.filter_by(id=user_id).first()
+    follower.following_ids = ",".join(following_list)
 
-        # Se já seguir então é post
-        else:
-            # Verificando se o usuário está na lista de seguidores
-            if str(user_id) in followers_list:
-                # Atualizando o banco de dados
-                followers_list.remove(str(user_id))
-                following_list.remove(str(profile_id))
-
-        # Atualiza a tabela com a nova lista de seguidores do perfil
-        db.execute("UPDATE users SET followers_ids = ? WHERE id = ?",
-                   (",".join(followers_list), profile_id))
-        # Atualiza a tabela com a nova lista de seguidos do usuário
-        db.execute("UPDATE users SET following_ids = ? WHERE id = ?",
-                   (",".join(following_list), user_id))
-
-        conn.commit()
-        # Retorna que o usuário foi seguido
-        return redirect(f"/{profile_name}")
+    db.session.commit()
+    # Retorna que o usuário foi seguido
+    return redirect(f"/{profile_name}")
 
 
 @app.route("/isFollowed")
 def isFollowed():
     # Pega o id fornecido pelo fetch
     profile_id = request.args.get("user")
-    # Se conecta ao banco de dados
-    with sqlite3.connect(DATABASE) as conn:
-        db = conn.cursor()
-        # Pega a lista de ids de seguidores do perfil
-
-        followers_list = db.execute(
-            "SELECT followers_ids FROM users WHERE id = ?", (profile_id,)).fetchone()[0]
-        # Checa se existe uma lista de seguidores
-        if not followers_list:
-            return jsonify(is_followed=False)
-        followers_list = followers_list.split(",")
-        # Checa se o usuário está na lista e segue o perfil
-        if str(session["user_id"]) in followers_list:
-            return jsonify(is_followed=True)
+    # Pega a lista de ids de seguidores do perfil
+    profile_followers = User.query.filter_by(
+        id=profile_id).with_entities(User.followers_ids).first()
+    # Checa se existe uma lista de seguidores
+    if not profile_followers.followers_ids:
+        return jsonify(is_followed=False)
+    followers_list = profile_followers.followers_ids.split(",")
+    # Checa se o usuário está na lista e segue o perfil
+    if str(session["user_id"]) in followers_list:
+        return jsonify(is_followed=True)
     return jsonify(is_followed=False)
 
 
@@ -447,32 +403,19 @@ def login():
         if not senha:
             return error("Digite sua senha")
 
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
+        if re.match(EMAIL_PATTERN, name_email):
+            user = User.query.filter_by(email=name_email).first()
+        else:
+            user = User.query.filter_by(nome=name_email).first()
 
-            if re.match(EMAIL_PATTERN, name_email):
-                result = db.execute(
-                    "SELECT id, nome, senha_hash FROM users WHERE email = ?", (name_email,)).fetchone()
-                if result is None:
-                    return error("Email não cadastrado")
-            else:
-                result = db.execute(
-                    "SELECT id, nome, senha_hash FROM users WHERE nome = ?", (name_email,)).fetchone()
-                if result is None:
-                    return error("Nome de usuário não encontrado")
+        if not user:
+            return error("Nome ou email incorretos", 400)
 
-            user = {
-                "id": result[0],
-                "name": result[1],
-                "senha_hash": result[2]
-            }
+        if not check_password_hash(user.senha_hash, senha):
+            return error("Senha incorreta", 400)
 
-            if not check_password_hash(user["senha_hash"], senha):
-                return error("Senha incorreta")
-
-            session["user_id"] = user["id"]
-            session["name"] = user["name"]
-            
+        session["user_id"] = user.id
+        session["name"] = user.nome
 
         return redirect("/")
     else:
@@ -506,23 +449,17 @@ def register():
             return error("Sua senha deve conter pelo menos 8 caracteres", 400)
         if senha != confirmation:
             return error("As senhas não coincidem", 400)
+        # Verifica se o nome ou email já estão cadastrados
+        if User.query.filter_by(nome=username).first() is not None:
+            return error("Nome de usuário já cadastrado", 400)
+        if User.query.filter_by(email=email).first() is not None:
+            return error("Email já cadastrado", 400)
 
-        with sqlite3.connect(DATABASE) as conn:
-            db = conn.cursor()
+        senha_hash = generate_password_hash(senha)
 
-            checkName = db.execute(
-                "SELECT nome FROM users WHERE nome = ?", (username,)).fetchone()
-            checkEmail = db.execute(
-                "SELECT email FROM users WHERE email = ?", (email,)).fetchone()
-
-            if checkName is not None:
-                return error("Nome de usuário já cadastrado", 400)
-            if checkEmail is not None:
-                return error("Email já cadastrado", 400)
-
-            db.execute("INSERT INTO users (nome,email,senha_hash) VALUES (?,?,?)",
-                       (username, email, generate_password_hash(senha)))
-            conn.commit()
+        new_user = User(nome=username, email=email, senha_hash=senha_hash)
+        db.session.add(new_user)
+        db.session.commit()
 
         return redirect("/login")
 
@@ -546,4 +483,7 @@ def inject_user():
 
 
 if __name__ == "__main__":
+    # Criar as tabelas no banco de dados
+    with app.app_context():
+        db.create_all()
     socketio.run(app)
