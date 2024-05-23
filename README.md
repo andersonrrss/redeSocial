@@ -9,3 +9,4 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 `ver - 23.05.2024`
 
 - Suporte para a biblioteca SQLAlchemy
+- Correção de bug no estilo
