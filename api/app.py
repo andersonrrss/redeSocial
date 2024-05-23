@@ -1,23 +1,22 @@
 import re
 import sqlite3
+import sys
 
 from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
 from flask_socketio import SocketIO, emit
+from flask_sqlalchemy import SQLAlchemy
+from models import db
 from helpers import error, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # Configure application
 app = Flask(__name__)
-# Chave secreta
-app.secret_key = 'a1b2c3'
-
-# Ensure templates are auto-reloaded
-app.config["TEMPLATES_AUTO_RELOAD"] = True
-# Configura a sessão
-app.config["SESSION_PERMANENT"] = True
-app.config["SESSION_TYPE"] = "filesystem"
+app.config.from_pyfile("config.py")
+# Banco de dados
+db.init_app(app)
+# Sessão
 Session(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
