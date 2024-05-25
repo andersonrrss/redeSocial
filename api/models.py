@@ -16,6 +16,13 @@ class User(db.Model):
     following_ids = db.Column(db.Text)
     creation = db.Column(db.TIMESTAMP, default=datetime.utcnow)
 
+class Chat(db.Model):
+    __tablename__ = "chats"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    messages = db.relationship('Message', backref='chat', lazy=True)
+
 class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
@@ -37,8 +44,9 @@ class Comment(db.Model):
 class Message(db.Model):
     __tablename__ = "messages"
     id = db.Column(db.Integer, primary_key=True)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chats.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     message = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     view = db.Column(db.Boolean, default=False)
@@ -60,6 +68,8 @@ db.Index('idx_nome', User.nome)
 db.Index('idx_email', User.email)
 db.Index('idx_senha', User.senha_hash)
 
+db.Index('idx_chat_id', Chat.id)
+
 db.Index('idx_posts_id', Post.id)
 db.Index('idx_posts_user_id', Post.user_id)
 
@@ -67,6 +77,7 @@ db.Index('idx_comments_id', Comment.id)
 db.Index('idx_comments_post_id', Comment.post_id)
 
 db.Index('idx_messages_id', Message.id)
+db.Index('idx_messages_chat_id', Message.chat_id)
 db.Index('idx_messages_sender_id', Message.sender_id)
 db.Index('idx_messages_receiver_id', Message.receiver_id)
 

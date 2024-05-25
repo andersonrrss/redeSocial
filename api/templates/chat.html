@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Conversar
+{% endblock %}
+
+{% block script %}
+<script src="../static/js/chat_handler.js"> </script>
+{% endblock %}
+
+{% block body %}
+    <main class="bg-white w-full md:w-3/4 h-screen text-start p-5 flex flex-col">
+        <header>
+            <h2 class="text-center m-2 text-2xl font-semibold text-purple-800">Conversar</h2>
+        </header>
+        <section id="chat_section">
+            {% if chats is not none %}
+                {% for chat in chats %}
+                    <a href="/chat?id={{ chat['id'] }}">
+                        <div>
+                            <img src="{{ chat['receiver']['profile_pic'] }}" alt="Avatar" width="50" height="50">
+                            <span>{{ chat["receiver"]["name"] }}</span>
+                        </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="w-full text-center mt-32">
+                    Sem nenhuma conversa..
+                </div>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

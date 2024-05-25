@@ -5,7 +5,7 @@ from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from helpers import error, login_required
-from models import db, User, Message, Notification, Comment, Post
+from models import db, User, Message, Notification, Comment, Post, Chat
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -60,7 +60,7 @@ def add():
 @app.route("/chat")
 @login_required
 def chat():
-    return error("Pra fazer", 404)
+    return render_template("chat.html", chats=None)
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -378,17 +378,23 @@ def follow():
 def isFollowed():
     # Pega o id fornecido pelo fetch
     profile_id = request.args.get("user")
-    # Pega a lista de ids de seguidores do perfil
-    profile_followers = User.query.filter_by(
-        id=profile_id).with_entities(User.followers_ids).first()
+    # Pega a lista de ids de seguidores e seguidos do perfil
+    profile_infos = User.query.filter_by(
+        id=profile_id).with_entities(User.followers_ids, User.following_ids).first()
     # Checa se existe uma lista de seguidores
-    if not profile_followers.followers_ids:
-        return jsonify(is_followed=False)
-    followers_list = profile_followers.followers_ids.split(",")
-    # Checa se o usuário está na lista e segue o perfil
-    if str(session["user_id"]) in followers_list:
-        return jsonify(is_followed=True)
-    return jsonify(is_followed=False)
+    if profile_infos.followers_ids:
+        followers_list = profile_infos.followers_ids.split(",")
+        # Checa se eu já sigo o perfil
+        if str(session["user_id"]) in followers_list:
+            return jsonify(is_followed=True)
+    # Checa se existe uma lista de seguidos
+    if profile_infos.following_ids:
+        following_list = profile_infos.following_ids.split(",")
+        # Checa se o perfil já me segue
+        if str(session["user_id"]) in following_list:
+            return jsonify(is_followed=False, follows_me=True)
+
+    return jsonify(is_followed=False, follows_me=False)
 
 
 @app.route("/login", methods=["GET", "POST"])

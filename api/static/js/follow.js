@@ -12,6 +12,9 @@ fetch(`/isFollowed?user=${user_id}`)
     return response.json();
   })
   .then((data) => {
+    if(data.follows_me){
+      followbtn.innerHTML = "Seguir de volta"; // Muda o conteúdo do botão
+    }
     // Se o usuário for seguido
     if (data.is_followed) {
       followbtn.innerHTML = "Seguindo"; // Muda o conteúdo do botão

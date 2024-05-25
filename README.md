@@ -6,7 +6,6 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 23.05.2024`
+`ver - 25.05.2024`
 
-- Suporte para a biblioteca SQLAlchemy
-- Correção de bug no estilo
+- Adicionando possibilidade de enviar mensagens
