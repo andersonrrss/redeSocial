@@ -5,7 +5,8 @@ from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from helpers import error, login_required
-from models import db, User, Message, Notification, Comment, Post
+from models import db, User, Message, Notification, Comment, Post, Chat, Follower
+from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -60,7 +61,46 @@ def add():
 @app.route("/chat")
 @login_required
 def chat():
-    return error("Pra fazer", 404)
+    user_id = session.get("user_id")
+    chats = []
+    sugestions = []
+    empty = True
+
+    try:
+        # Consulta para obter os chats em que o usuário está envolvido
+        chats_results = db.session.query(Chat).filter(or_(Chat.user1_id == user_id, Chat.user2_id == user_id)).all()
+        if chats_results:
+            empty = False
+            # Itera pelas conversas do usuário
+            for chat in chats_results:
+                receiver_id = chat.user1_id if chat.user2_id == user_id else chat.user2_id # O usuário que eu quero contatar
+                receiver = User.query.get(receiver_id)
+                # Organiza as informações
+                chats.append({
+                    "id": chat.id,
+                    "receiver": {
+                        "name": receiver.nome,
+                        "profile_pic": receiver.profile_pic
+                    },
+                })
+        # Pega seguidores do usuário para usar como sugestão e formata em uma lista
+        following_ids = [follower.follower_id for follower in Follower.query.filter_by(user_id=user_id).limit(15).all()]
+        if following_ids:
+            result = User.query.filter(User.id.in_(following_ids)).all() # Solicita as informações necessárias dos usuários
+            if result:
+                empty = False
+                # Organiza as sugestões
+                for sugestion in result:
+                    sugestions.append({
+                        "id": sugestion.id, # O id vai ser usado para a criação de uma nova conversa
+                        "name": sugestion.nome,
+                        "profile_pic": sugestion.profile_pic
+                    })
+    except Exception as e:
+        # Retorna uma resposta de erro
+        return error(f"Erro ao carregar chats: {str(e)}", 500)
+    
+    return render_template("chat.html", chats=chats, sugestions=sugestions, empty=empty)
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -73,8 +113,8 @@ def search():
 def getUser():
     query = request.args.get("query")
 
-    usernames = User.query.filter(User.nome.ilike(f"{query}%")).limit(20).all()
-    usernames = [user.nome for user in usernames]
+    usernames = User.query.filter(User.nome.ilike(f"{query}%")).limit(20).all() # Busca pelos nomes
+    usernames = [user.nome for user in usernames] # Organiza as informações
 
     return jsonify(usernames)
 
@@ -84,7 +124,7 @@ def getUser():
 def notifications():
     if request.method == "POST":
         user_id = session["user_id"]
-        result = Notification.query.filter_by(user_id=user_id).limit(20).all()
+        result = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).limit(20).all()
 
         if result is None:
             return jsonify([])
@@ -120,17 +160,16 @@ def user(username):
         "name": result.nome,
         "profile_pic": result.profile_pic,
         "bio": result.bio.replace("\n", "<br>"),
-        "followers": result.followers_ids,
-        "following": result.following_ids
+        "followers": result.followers,
+        "following": result.following
     }
-    # Formata a quantiade de seguidores
-    if user["followers"]:
-        user["followers"] = len(user["followers"].split(","))
+    if user["followers"] is not None:
+        user["followers"] = len(user["followers"])
     else:
         user["followers"] = 0
 
-    if user["following"]:
-        user["following"] = len(user["following"].split(","))
+    if user["following"] is not None:
+        user["following"] = len(user["following"])
     else:
         user["following"] = 0
 
@@ -282,40 +321,47 @@ def following(username):
 
 @app.route("/follows", methods=["GET", "POST"])
 def follows():
-    username = request.values.get("username")  # Nome do usuário
-    if not username:
-        return error("Algo deu errado", 404)
-
-    result = User.query.filter_by(nome=username).first()
-    if result is None:
-        return error("Algo deu errado", 500)
+    username = request.values.get("username")  
+    user = User.query.filter_by(nome=username).first()
+    if not user:
+        return error("Usuário não encontrado")
+    
+    
     # GET pede os seguidores
     if request.method == "GET":
         # Checa se o usuário tem seguidores
-        if not result.followers_ids:
+        user_followers_ids = user.followers
+
+        if not user_followers_ids:
             return jsonify(has_follows=False)
-        # Transforma a string em uma lista
-        follows_ids = result.followers_ids.split(",")
+        # Transformar a lista de tuplas em uma lista de IDs
+        followers_ids = [follower.id for follower in user_followers_ids]
+
+        followers_users = User.query.filter(User.id.in_(followers_ids)).all()
+        followers_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in followers_users]
+
+        return jsonify(has_follows=True, follows_infos=followers_users)
+
     # POST pede os seguidos
     else:
-        # Checa se o usuário tem seguidores
-        if not result.following_ids:
+        # Checa se o usuário segue alguém
+        user_following_ids = user.following
+
+        if not user_following_ids:
             return jsonify(has_follows=False)
+        
+        # Transformar a lista de tuplas em uma lista de IDs
+        following_ids = [followed.id for followed in user_following_ids]
 
-        # Transforma a string em uma lista
-        follows_ids = result.following_ids.split(",")
-    follows = User.query.filter(User.id.in_(follows_ids)).with_entities(
-        User.id, User.nome, User.profile_pic).all()
-    # Converter follows_infos em uma lista de dicionários para facilitar a serialização
-    follows_infos = [{"id": user.id, "nome": user.nome,
-                      "profile_pic": user.profile_pic} for user in follows]
+        following_users = User.query.filter(User.id.in_(following_ids)).all()
+        following_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in following_users]
 
-    return jsonify(has_follows=True, follows_infos=follows_infos)
+        return jsonify(has_follows=True, follows_infos=following_users)
 
 # Aceita ambos os métodos
 
 
-@app.route("/follow", methods=["GET", "POST"])
+@app.route("/follow")
 @login_required
 def follow():
     # Pega id do perfil independente do método
@@ -323,72 +369,49 @@ def follow():
     user_id = session["user_id"]  # Id do usuário
 
     profile_infos = User.query.filter_by(id=profile_id).with_entities(
-        User.nome, User.followers_ids, User.socket_id).first()
+        User.nome, User.socket_id).first() # Informações do perfil a ser seguido
 
     # Obtendo o nome de usuário e a lista de seguidores
-    profile_name, followers_ids, profile_socket = profile_infos.nome, profile_infos.followers_ids, profile_infos.socket_id
+    profile_name, profile_socket = profile_infos.nome, profile_infos.socket_id
     if not profile_name:
         return error("Algo deu errado", 500)
-    # Obtendo a lista de seguidos do usuário
-    following_ids = User.query.filter_by(
-        id=user_id).with_entities(User.following_ids).first()[0]
-
-    # Convertendo a lista de seguidores e de seguidos para uma lista
-    followers_list = followers_ids.split(",") if followers_ids else []
-    following_list = following_ids.split(",") if following_ids else []
-
-    # Se o perfil não for seguido então o método recebido é GET
-    if request.method == "GET":
-        # Atualizando o banco de dados
-        followers_list.append(str(user_id))
-        following_list.append(str(profile_id))
-        # Envia notificação do novo seguidor para o perfil seguido
-        new_notification = Notification(
-            content=f"@{profile_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
-        db.session.add(new_notification)
+    # Checa se o usuário(eu) já segue o perfil
+    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
+        # Parar de seguir 
+        Follower.query.filter_by(user_id=user_id, follower_id=profile_id).delete()
         db.session.commit()
-
+    else:
+        # Começar a seguir
+        new_follower = Follower(user_id=user_id, follower_id=profile_id)
+        user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()
+        new_notification = Notification(
+            content=f"@{user_name[0]} começou a seguir você!", notification_type="follow", user_id=profile_id)
+        db.session.add(new_notification)
+        db.session.add(new_follower)
+        db.session.commit()
         if profile_socket is not None:
             # Envia a notificação de novo seguidor
             print(f"Sending notification to user {profile_id} at socket {profile_socket}")
             socketio.emit("new_follower", {
                           "follower_id": user_id, "follower_name": session["name"]}, room=profile_socket)
-
-    # Se já seguir então é POST
-    else:
-        # Verificando se o usuário está na lista de seguidores
-        if str(user_id) in followers_list:
-            # Atualizando o banco de dados
-            followers_list.remove(str(user_id))
-            following_list.remove(str(profile_id))
-
-    # Atualiza a tabela com a nova lista de seguidores do perfil
-    followed = User.query.filter_by(id=profile_id).first()
-    followed.followers_ids = ",".join(followers_list)
-    # Atualiza a tabela com a nova lista de seguidos do usuário
-    follower = User.query.filter_by(id=user_id).first()
-    follower.following_ids = ",".join(following_list)
-
-    db.session.commit()
+    
     # Retorna que o usuário foi seguido
     return redirect(f"/{profile_name}")
 
 
 @app.route("/isFollowed")
 def isFollowed():
-    # Pega o id fornecido pelo fetch
-    profile_id = request.args.get("user")
-    # Pega a lista de ids de seguidores do perfil
-    profile_followers = User.query.filter_by(
-        id=profile_id).with_entities(User.followers_ids).first()
+    profile_id = request.args.get("user") # ID do perfil
+    user_id = session["user_id"] # ID do usuário(eu) 
+
     # Checa se existe uma lista de seguidores
-    if not profile_followers.followers_ids:
-        return jsonify(is_followed=False)
-    followers_list = profile_followers.followers_ids.split(",")
-    # Checa se o usuário está na lista e segue o perfil
-    if str(session["user_id"]) in followers_list:
+    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
         return jsonify(is_followed=True)
-    return jsonify(is_followed=False)
+    # Checa se existe uma lista de seguidos
+    if Follower.query.filter_by(user_id=profile_id, follower_id=user_id).first():
+        return jsonify(is_followed=False, follows_me=True)
+
+    return jsonify(is_followed=False, follows_me=False)
 
 
 @app.route("/login", methods=["GET", "POST"])

@@ -12,13 +12,14 @@ fetch(`/isFollowed?user=${user_id}`)
     return response.json();
   })
   .then((data) => {
+    if(data.follows_me){
+      followbtn.innerHTML = "Seguir de volta"; // Muda o conteúdo do botão
+    }
     // Se o usuário for seguido
     if (data.is_followed) {
       followbtn.innerHTML = "Seguindo"; // Muda o conteúdo do botão
       followbtn.classList =
         "text-black text-center font-semibold p-2 rounded-md w-full bg-gray-300 hover:bg-gray-400"; // Muda o estilo do botão
-      // Muda o método do form para POST
-      form.method = "post";
     }
   })
   .catch((error) => {
