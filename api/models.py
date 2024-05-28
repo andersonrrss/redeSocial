@@ -40,6 +40,13 @@ class Chat(db.Model):
     user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     messages = db.relationship('Message', backref='chat', lazy=True)
 
+class Chat(db.Model):
+    __tablename__ = "chats"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    messages = db.relationship('Message', backref='chat', lazy=True)
+
 class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)

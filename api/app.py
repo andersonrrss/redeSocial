@@ -5,8 +5,12 @@ from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from helpers import error, login_required
+<<<<<<< HEAD
 from models import db, User, Message, Notification, Comment, Post, Chat, Follower
 from sqlalchemy import or_
+=======
+from models import db, User, Message, Notification, Comment, Post, Chat
+>>>>>>> 5c3457e2dc8a2ba78efc5dc388533cd9b86e06d2
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -61,6 +65,7 @@ def add():
 @app.route("/chat")
 @login_required
 def chat():
+<<<<<<< HEAD
     user_id = session.get("user_id")
     chats = []
     sugestions = []
@@ -101,6 +106,9 @@ def chat():
         return error(f"Erro ao carregar chats: {str(e)}", 500)
     
     return render_template("chat.html", chats=chats, sugestions=sugestions, empty=empty)
+=======
+    return render_template("chat.html", chats=None)
+>>>>>>> 5c3457e2dc8a2ba78efc5dc388533cd9b86e06d2
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -401,6 +409,7 @@ def follow():
 
 @app.route("/isFollowed")
 def isFollowed():
+<<<<<<< HEAD
     profile_id = request.args.get("user") # ID do perfil
     user_id = session["user_id"] # ID do usuário(eu) 
 
@@ -410,6 +419,25 @@ def isFollowed():
     # Checa se existe uma lista de seguidos
     if Follower.query.filter_by(user_id=profile_id, follower_id=user_id).first():
         return jsonify(is_followed=False, follows_me=True)
+=======
+    # Pega o id fornecido pelo fetch
+    profile_id = request.args.get("user")
+    # Pega a lista de ids de seguidores e seguidos do perfil
+    profile_infos = User.query.filter_by(
+        id=profile_id).with_entities(User.followers_ids, User.following_ids).first()
+    # Checa se existe uma lista de seguidores
+    if profile_infos.followers_ids:
+        followers_list = profile_infos.followers_ids.split(",")
+        # Checa se eu já sigo o perfil
+        if str(session["user_id"]) in followers_list:
+            return jsonify(is_followed=True)
+    # Checa se existe uma lista de seguidos
+    if profile_infos.following_ids:
+        following_list = profile_infos.following_ids.split(",")
+        # Checa se o perfil já me segue
+        if str(session["user_id"]) in following_list:
+            return jsonify(is_followed=False, follows_me=True)
+>>>>>>> 5c3457e2dc8a2ba78efc5dc388533cd9b86e06d2
 
     return jsonify(is_followed=False, follows_me=False)
 
