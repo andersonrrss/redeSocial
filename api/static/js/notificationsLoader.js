@@ -9,7 +9,7 @@ fetch("/notifications", {
   .then((data) => {
     const notifications = document.querySelector("#notifications");
 
-    if (!!data.length) {
+    if (data.length > 0) {
       let html = "";
       data.forEach((item) => {
         let tempo = new Date(item.timestamp);

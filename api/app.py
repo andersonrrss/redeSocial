@@ -69,12 +69,14 @@ def chat():
     try:
         # Consulta para obter os chats em que o usuário está envolvido
         chats_results = db.session.query(Chat).filter(or_(Chat.user1_id == user_id, Chat.user2_id == user_id)).all()
+        chat_user_ids = set() # Armazena os ids de perfis que tenham chat vinculado com o usuário
         if chats_results:
             empty = False
             # Itera pelas conversas do usuário
             for chat in chats_results:
                 receiver_id = chat.user1_id if chat.user2_id == user_id else chat.user2_id # O usuário que eu quero contatar
                 receiver = User.query.get(receiver_id)
+                chat_user_ids.add(receiver_id) # Armazena os ids dos perfis que já possuem um chat vinculado com o usuário
                 # Organiza as informações
                 chats.append({
                     "id": chat.id,
@@ -86,6 +88,7 @@ def chat():
         # Pega seguidores do usuário para usar como sugestão e formata em uma lista
         following_ids = [follower.follower_id for follower in Follower.query.filter_by(user_id=user_id).limit(15).all()]
         if following_ids:
+            following_ids = [fid for fid in following_ids if fid not in chat_user_ids] # Exclui IDs dos usuários que já possuem um chat com o usuário atual
             result = User.query.filter(User.id.in_(following_ids)).all() # Solicita as informações necessárias dos usuários
             if result:
                 empty = False
@@ -101,6 +104,45 @@ def chat():
         return error(f"Erro ao carregar chats: {str(e)}", 500)
     
     return render_template("chat.html", chats=chats, sugestions=sugestions, empty=empty)
+
+@app.route("/chat/<chat_id>")
+@login_required
+def chat_messages(chat_id):
+    chat = Chat.query.filter_by(id=chat_id).first()
+    if not chat:
+        return error("Falha ao carregar conversa", 404)
+    if chat.user1_id == session.get("user_id"):
+        receiver = User.query.filter_by(id=chat.user1_id).first()
+    else:
+        receiver = User.query.filter_by(id=chat.user1_id).first()
+
+    receiver = {
+        "id": receiver.id,
+        "socket_id": receiver.socket_id,
+        "name": receiver.nome,
+        "profile_pic": receiver.profile_pic,
+    }
+    return render_template("message.html", receiver=receiver, chat_id=chat_id)
+
+@app.route("/sendmessage")
+@login_required
+def send_message():
+    chat_id = request.args.get("chat_id")
+    receiver_id = request.args.get("receiver_id")
+    message_content = request.args.get("message")
+    return jsonify(message=message_content)
+
+@app.route("/newchat")
+@login_required
+def newchat():
+    user_id = session.get("user_id")
+    receiver_id = request.args.get("receiver")
+
+    new_chat = Chat(user1_id=user_id, user2_id=receiver_id)
+    db.session.add(new_chat)
+    db.session.commit()
+
+    return redirect(f"/chat/{new_chat.id}")
 
 
 @app.route("/search", methods=["GET", "POST"])

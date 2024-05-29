@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Conversar
+{% endblock %}
+
+{% block script %}
+<script src="../static/js/message_handler.js" defer> </script>
+{% endblock %}
+
+{% block body %}
+    <main class="bg-white w-full md:w-3/4 h-screen text-start flex flex-col overflow-hidden ">
+        <header class="border-b border-gray-300 max-h-1/6 p-1 w-full flex items-center">
+            <a href="/chat" class="w-10 h-full rounded-md hover:bg-gray-300 flex justify-center items-center" style="transition: all 200ms;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 512 512"><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="45" d="M328 112L184 256l144 144"/></svg>
+            </a>
+            <a href="/{{ receiver['name'] }}" class="flex rounded-md hover:bg-gray-300 p-1 items-center w-full md:w-1/2" style="transition: all 200ms;">
+                <img src="{{ url_for('static', filename=receiver['profile_pic']) }}" alt="Foto de perfil" class="w-8 mx-2 rounded-full">
+                <span class="font-semibold">@{{ receiver["name"] }}</span>
+            </a>
+        </header>
+        <section id="message_area" class="overflow-auto h-screen overflow-x-hidden w-full p-3 flex flex-col">
+            {% for message in messages %}
+                {% if message['sender'] == current_user.id %}
+                <p class="message sent">{{ message['content']}}</p>
+                {% else %}
+                <p class="message received">{{ message['content']}}</p>
+                {% endif %}
+            {% endfor %}
+        </section>
+        <footer class="flex w-full p-2 px-3 h-max-1/6 h-14">
+            <form class="flex w-full" data-chat-id="{{ chat_id }}" data-receiver-id="{{ receiver['id'] }}" id="message_form">
+                <input id="message_input" type="text" name="message" autocomplete="off" autocapitalize="on" placeholder="Envie uma mensagem" class="bg-gray-200 p-3 rounded-lg w-full mx-3 outline-none focus:border-shadow" style="transition: all 350ms;">
+                <button type="submit" class="flex justify-center items-center w-14 bg-purple-700 rounded-md hover:bg-purple-800 p-1 ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 24 24"><path fill="white" d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"/></svg>
+                </button>
+            </form>
+        </footer>
+        
+        <!-- Oculta a navbar padrão do site -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          navbar = document.querySelector(".navbar");
+          navbar.style.display = "none";
+          window.localStorage.removeItem("searchHistory");
+        });
+      </script>
+    </main>
+    
+{% endblock %}
