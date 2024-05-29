@@ -20,16 +20,27 @@
             </a>
         </header>
         <section id="message_area" class="overflow-auto h-screen overflow-x-hidden w-full p-3 flex flex-col">
-            {% for message in messages %}
-                {% if message['sender'] == current_user.id %}
-                <p class="message sent">{{ message['content']}}</p>
+            {% for message in chat['messages'] %}
+                {% if message['sender'] == receiver['id'] %}
+                    <p class="message received">{{ message['content']}}</p>
                 {% else %}
-                <p class="message received">{{ message['content']}}</p>
+                    <p class="message sent">{{ message['content']}}</p>
                 {% endif %}
             {% endfor %}
+            {% if chat['new_messages'] %}
+                <!-- Separador de novas mensagens -->
+                <div class="my-4 flex items-center" id="separator">
+                    <div class="flex-grow h-1 border-t border-gray-500"></div>
+                    <span class="mx-2 text-gray-700 font-semibold">Novas mensagens!!</span>
+                    <div class="flex-grow h-1 border-t border-gray-500"></div>
+                </div>
+                {% for message in chat['new_messages'] %}
+                    <p class="message received new-m">{{ message['content']}}</p>
+                {% endfor %}
+            {% endif %}
         </section>
         <footer class="flex w-full p-2 px-3 h-max-1/6 h-14">
-            <form class="flex w-full" data-chat-id="{{ chat_id }}" data-receiver-id="{{ receiver['id'] }}" id="message_form">
+            <form class="flex w-full" data-chat-id="{{ chat['id'] }}" data-receiver-id="{{ receiver['id'] }}" id="message_form">
                 <input id="message_input" type="text" name="message" autocomplete="off" autocapitalize="on" placeholder="Envie uma mensagem" class="bg-gray-200 p-3 rounded-lg w-full mx-3 outline-none focus:border-shadow" style="transition: all 350ms;">
                 <button type="submit" class="flex justify-center items-center w-14 bg-purple-700 rounded-md hover:bg-purple-800 p-1 ">
                     <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 24 24"><path fill="white" d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"/></svg>

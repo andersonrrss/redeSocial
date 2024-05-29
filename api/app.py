@@ -112,17 +112,36 @@ def chat_messages(chat_id):
     if not chat:
         return error("Falha ao carregar conversa", 404)
     if chat.user1_id == session.get("user_id"):
-        receiver = User.query.filter_by(id=chat.user1_id).first()
+        receiver = User.query.filter_by(id=chat.user2_id).first()
     else:
         receiver = User.query.filter_by(id=chat.user1_id).first()
 
+    # Usuário que vai receber minhas mensagens
     receiver = {
         "id": receiver.id,
         "socket_id": receiver.socket_id,
         "name": receiver.nome,
         "profile_pic": receiver.profile_pic,
     }
-    return render_template("message.html", receiver=receiver, chat_id=chat_id)
+    messages = Message.query.filter(Message.chat_id==chat.id, Message.view==True).all()
+    messages = [{"timestamp":message.timestamp, "content":message.message, "sender":message.sender_id} for message in messages] # Organiza as mensagens já lidas
+    new_messages_result = Message.query.filter(Message.chat_id==chat.id, Message.view==False, Message.sender_id != session.get("user_id")).all() # Mensagens não lidas
+    new_messages = []
+    for message in new_messages_result:
+        # Organiza as mensagens não lidas
+        new_messages.append({
+            "timestamp":message.timestamp, "content":message.message, "sender":message.sender_id
+        })
+        message.view = True # Atualizar o campo view para True nas mensagens novas
+    db.session.commit()
+
+    chat = {
+        "id": chat_id,
+        "messages": messages,
+        "new_messages": new_messages
+    }
+
+    return render_template("message.html", receiver=receiver, chat=chat)
 
 @app.route("/sendmessage")
 @login_required
@@ -130,6 +149,23 @@ def send_message():
     chat_id = request.args.get("chat_id")
     receiver_id = request.args.get("receiver_id")
     message_content = request.args.get("message")
+    sender_id = session.get("user_id")
+
+    new_message = Message(
+        chat_id= chat_id,
+        sender_id= sender_id,
+        receiver_id= receiver_id,
+        message= message_content,
+    )
+    db.session.add(new_message)
+    db.session.commit()
+
+    receiver_user = User.query.filter_by(id=receiver_id).first()
+
+    if receiver_user.socket_id:
+        print(f"Sending message to {receiver_user.socket_id}")
+        socketio.emit("new-message", {"id": new_message.id, "content": message_content, "sender_id": sender_id}, room=receiver_user.socket_id)
+
     return jsonify(message=message_content)
 
 @app.route("/newchat")
@@ -143,6 +179,15 @@ def newchat():
     db.session.commit()
 
     return redirect(f"/chat/{new_chat.id}")
+
+@app.route("/messageviewed")
+@login_required
+def message_viewed():
+    message_id = request.args.get("message_id")
+    message = Message.query.filter_by(id=message_id).first()
+    message.view = True
+    db.session.commit()
+    return "FUNCIONOU"
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -427,7 +472,7 @@ def follow():
         new_follower = Follower(user_id=user_id, follower_id=profile_id)
         user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()
         new_notification = Notification(
-            content=f"@{user_name[0]} começou a seguir você!", notification_type="follow", user_id=profile_id)
+            content=f"@{user_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
         db.session.add(new_notification)
         db.session.add(new_follower)
         db.session.commit()

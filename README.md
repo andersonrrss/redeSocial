@@ -4,7 +4,12 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 27.05.2024`
+`ver - 29.05.2024`
 
-- Interface de conversa privada adicionada
-- função de criação de novo chat adcionado para complementar as sugestões
+- Possibilidade de conversas privadas com outros usuários
+
+## A fazer:
+- Responder mensagens em particular
+- Excluir chats
+- Excluir mensagens
+- Refazer campo de envio de mensagens para que obedeça a formatação que o usuário desejar
