@@ -4,11 +4,12 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 29.05.2024`
+`ver - 01.06.2024`
 
-- Possibilidade de conversas privadas com outros usuários
+- Dropdown de conversas adiconado(ainda não completo)
 
 ## A fazer:
+- Completar dropdown de chats
 - Responder mensagens em particular
 - Excluir chats
 - Excluir mensagens

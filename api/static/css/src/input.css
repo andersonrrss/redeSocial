@@ -81,4 +81,19 @@
     @apply bg-gray-300; /* Cor de fundo para mensagens recebidas */
     align-self: flex-start; /* Alinha as mensagens recebidas à esquerda */
   }
+  .dropdown-menu{
+    position: absolute;
+    top: 10%;
+    right: 10px;
+    transition: max-height 500ms ease-in-out, opacity 500ms ease-in-out;
+    max-height: 0;
+    opacity: 0;
+  }
+  .dropdown-menu.show {
+    max-height: 100px; /* ou um valor suficientemente grande */
+    opacity: 1;
+}
+  .no-hover:hover {
+    background-color: inherit !important;
+}
 }

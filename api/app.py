@@ -130,7 +130,7 @@ def chat_messages(chat_id):
     for message in new_messages_result:
         # Organiza as mensagens não lidas
         new_messages.append({
-            "timestamp":message.timestamp, "content":message.message, "sender":message.sender_id
+            "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
         })
         message.view = True # Atualizar o campo view para True nas mensagens novas
     db.session.commit()
@@ -161,10 +161,18 @@ def send_message():
     db.session.commit()
 
     receiver_user = User.query.filter_by(id=receiver_id).first()
+    sender_name = User.query.filter_by(id=new_message.sender_id).with_entities(User.nome).first()
 
     if receiver_user.socket_id:
-        print(f"Sending message to {receiver_user.socket_id}")
-        socketio.emit("new-message", {"id": new_message.id, "content": message_content, "sender_id": sender_id}, room=receiver_user.socket_id)
+        message_data = {
+            "id": new_message.id,
+            "content": message_content,
+            "chat_id": new_message.chat_id,
+            "sender_id": sender_id,
+            "sender_name": sender_name[0],
+            "timestamp": new_message.timestamp.isoformat() 
+        }
+        socketio.emit("new-message", message_data, room=receiver_user.socket_id)
 
     return jsonify(message=message_content)
 
@@ -470,7 +478,7 @@ def follow():
     else:
         # Começar a seguir
         new_follower = Follower(user_id=user_id, follower_id=profile_id)
-        user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()
+        user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()[0]
         new_notification = Notification(
             content=f"@{user_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
         db.session.add(new_notification)
