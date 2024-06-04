@@ -4,7 +4,7 @@ from flask import Flask, render_template, jsonify, redirect, request, session
 from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
-from helpers import error, login_required
+from helpers import error, login_required, delete_chat_for_user, get_messages_for_chat
 from models import db, User, Message, Notification, Comment, Post, Chat, Follower
 from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -68,7 +68,10 @@ def chat():
 
     try:
         # Consulta para obter os chats em que o usuário está envolvido
-        chats_results = db.session.query(Chat).filter(or_(Chat.user1_id == user_id, Chat.user2_id == user_id)).all()
+        chats_results = Chat.query.filter(
+            (Chat.user1_id == user_id) & (Chat.user1_deleted == False) |
+            (Chat.user2_id == user_id) & (Chat.user2_deleted == False)
+        ).all()
         chat_user_ids = set() # Armazena os ids de perfis que tenham chat vinculado com o usuário
         if chats_results:
             empty = False
@@ -109,9 +112,10 @@ def chat():
 @login_required
 def chat_messages(chat_id):
     chat = Chat.query.filter_by(id=chat_id).first()
+    user_id = session.get("user_id")
     if not chat:
         return error("Falha ao carregar conversa", 404)
-    if chat.user1_id == session.get("user_id"):
+    if chat.user1_id == user_id:
         receiver = User.query.filter_by(id=chat.user2_id).first()
     else:
         receiver = User.query.filter_by(id=chat.user1_id).first()
@@ -123,9 +127,9 @@ def chat_messages(chat_id):
         "name": receiver.nome,
         "profile_pic": receiver.profile_pic,
     }
-    messages = Message.query.filter(Message.chat_id==chat.id, Message.view==True).all()
+    messages = get_messages_for_chat(chat_id, user_id)
     messages = [{"timestamp":message.timestamp, "content":message.message, "sender":message.sender_id} for message in messages] # Organiza as mensagens já lidas
-    new_messages_result = Message.query.filter(Message.chat_id==chat.id, Message.view==False, Message.sender_id != session.get("user_id")).all() # Mensagens não lidas
+    new_messages_result = Message.query.filter(Message.chat_id==chat.id, Message.view==False, Message.sender_id != user_id).all() # Mensagens não lidas
     new_messages = []
     for message in new_messages_result:
         # Organiza as mensagens não lidas
@@ -157,6 +161,13 @@ def send_message():
         receiver_id= receiver_id,
         message= message_content,
     )
+    chat = Chat.query.get(chat_id)
+    if chat.user1_deleted:
+        chat.user1_deleted = False
+
+    if chat.user2_deleted:
+        chat.user2_deleted = False
+        
     db.session.add(new_message)
     db.session.commit()
 
@@ -181,12 +192,35 @@ def send_message():
 def newchat():
     user_id = session.get("user_id")
     receiver_id = request.args.get("receiver")
+    chat = Chat.query.filter(
+        (Chat.user1_id == user_id ) & (Chat.user2_id == receiver_id ) |
+        (Chat.user1_id == receiver_id ) & (Chat.user2_id == user_id )
+    ).first()
+    if chat is not None:
+        chat.user1_deleted = False
+        chat.user2_deleted = False
+    else:
+        new_chat = Chat(user1_id=user_id, user2_id=receiver_id)
+        db.session.add(new_chat)
 
-    new_chat = Chat(user1_id=user_id, user2_id=receiver_id)
-    db.session.add(new_chat)
     db.session.commit()
+    try: 
+        chat_id = new_chat.id
+    except:
+        chat_id = chat.id
 
-    return redirect(f"/chat/{new_chat.id}")
+    return redirect(f"/chat/{chat_id}")
+
+@app.route("/deletechat", methods=["POST"])
+@login_required
+def delete_chat():
+    chat_id = request.form.get("chat_id")
+    user_id = session.get("user_id")
+    if chat_id and user_id:
+        delete_chat_for_user(chat_id, user_id)
+        return redirect("/chat")
+    else:
+        return error("Algo deu errado", 500)
 
 @app.route("/messageviewed")
 @login_required
@@ -208,7 +242,7 @@ def search():
 def getUser():
     query = request.args.get("query")
 
-    usernames = User.query.filter(User.nome.ilike(f"{query}%")).limit(20).all() # Busca pelos nomes
+    usernames = User.query.filter(User.nome.ilike(f"{query}%") & (User.id != session.get("user_id") )).limit(20).all() # Busca pelos nomes
     usernames = [user.nome for user in usernames] # Organiza as informações
 
     return jsonify(usernames)

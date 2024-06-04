@@ -16,7 +16,8 @@ try {
 
       // Mostra apenas o dropdown correspondente
       dropdowns[index].classList.toggle("hidden");
-      setTimeout(() => { // Para que a animação funcione
+      setTimeout(() => {
+        // Para que a animação funcione
         dropdowns[index].classList.toggle("show");
       }, 1);
     });
@@ -36,6 +37,13 @@ try {
     });
     element.addEventListener("mouseout", function () {
       element.parentElement.classList.remove("no-hover");
+    });
+  });
+
+  const delete_chat = document.querySelectorAll(".delete_chat_btn");
+  delete_chat.forEach((button, index) => {
+    button.addEventListener("click", function () {
+      document.querySelectorAll(".deleteChatForm")[index].submit()
     });
   });
 } catch {

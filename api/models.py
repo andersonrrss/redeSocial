@@ -38,6 +38,8 @@ class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user1_deleted = db.Column(db.Boolean, default=False)
+    user2_deleted = db.Column(db.Boolean, default=False)
     messages = db.relationship('Message', backref='chat', lazy=True)
 
 
@@ -69,6 +71,8 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     view = db.Column(db.Boolean, default=False)
     parent_id = db.Column(db.Integer, default=0)
+    user1_deleted = db.Column(db.Boolean, default=False)
+    user2_deleted = db.Column(db.Boolean, default=False)
 
 class Notification(db.Model):
     __tablename__ = "notifications"
@@ -93,6 +97,8 @@ db.Index('idx_email', User.email)
 db.Index('idx_senha', User.senha_hash)
 
 db.Index('idx_chat_id', Chat.id)
+db.Index('idx_chats_user1_deleted', Chat.user1_deleted)
+db.Index('idx_chats_user2_deleted', Chat.user2_deleted)
 
 db.Index('idx_posts_id', Post.id)
 db.Index('idx_posts_user_id', Post.user_id)

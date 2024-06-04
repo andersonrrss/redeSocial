@@ -4,13 +4,11 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 01.06.2024`
+`ver - 03.06.2024`
 
-- Dropdown de conversas adiconado(ainda não completo)
+- Possibilidade de apagar chats
 
 ## A fazer:
-- Completar dropdown de chats
 - Responder mensagens em particular
-- Excluir chats
 - Excluir mensagens
 - Refazer campo de envio de mensagens para que obedeça a formatação que o usuário desejar
