@@ -4,12 +4,8 @@
     {{ user["name"] }}
 {% endblock %}
 
-{% block script%}
-    <script src="../static/js/follow.js" defer></script>
-{% endblock %}
-
 {% block body %}
-<main class="bg-white w-full md:w-3/4 h-screen text-start py-10 px-5 md:px-16 flex flex-col">
+<main class="bg-white w-full md:w-3/4 h-screen text-start py-10 px-5 md:px-16 flex flex-col pb-14">
     <header class="border-b border-gray-400 pb-10">
         <div class="flex">
             <div class="mr-5 sm:mx-10">
@@ -36,12 +32,33 @@
         <div class="block sm:hidden w-full my-7">
             <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
         </div>
-        <form action="/follow" id="followbtnForm" method="get" class="mt-5">
-            <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
-            <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
-                Seguir
-            </button>
-        </form>
+        <div class="mt-5 flex flex-nowrap w-full">
+            {% if user["followed"] %}
+                <a href="/chat" class="text-black text-center font-semibold p-2 rounded-md w-full sm:w-1/2 mx-2 bg-gray-300 hover:bg-gray-400">
+                    Conversar
+                </a>
+                <form action="/unfollow" method="get" class="w-full sm:w-1/2 mx-2">
+                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                    <button class="text-black text-center font-semibold p-2 rounded-md w-full bg-gray-300 hover:bg-gray-400" id="followbtn">
+                        Seguindo
+                    </button>
+                </form>
+            {% elif user["follows_me"] %}
+                <form action="/follow" method="get" class="w-full">
+                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                    <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
+                        Seguir de volta
+                    </button>
+                </form>
+            {% else %}
+                <form action="/follow" method="get" class="w-full">
+                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                    <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
+                        Seguir
+                    </button>
+                </form>
+            {% endif %}
+        </div>
     </header>
     <section class="flex justify-center items-center h-full">
         <span>

@@ -44,11 +44,13 @@ message_form.addEventListener("submit", function (event) {
 var socket = io();
 
 socket.on("new-message", function (message) {
+
   const message_element = document.createElement("p");
   message_element.textContent = message.content;
   message_element.classList.add("message", "received");
   message_area.appendChild(message_element);
   scrollToBottom(); // Rola para o final após adicionar a nova mensagem
+  console.log("New message received:"); // Log para depuração
   // Informa ao servidor que a mensagem foi lida
   fetch(`/messageviewed?message_id=${message.id}`).catch((err) => {
     let status = err.status ?? "Status não disponível";

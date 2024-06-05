@@ -127,16 +127,21 @@ def chat_messages(chat_id):
         "name": receiver.nome,
         "profile_pic": receiver.profile_pic,
     }
-    messages = get_messages_for_chat(chat_id, user_id)
-    messages = [{"timestamp":message.timestamp, "content":message.message, "sender":message.sender_id} for message in messages] # Organiza as mensagens já lidas
-    new_messages_result = Message.query.filter(Message.chat_id==chat.id, Message.view==False, Message.sender_id != user_id).all() # Mensagens não lidas
+    messages_result = get_messages_for_chat(chat_id, user_id)
+    messages = []
     new_messages = []
-    for message in new_messages_result:
-        # Organiza as mensagens não lidas
-        new_messages.append({
-            "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
-        })
-        message.view = True # Atualizar o campo view para True nas mensagens novas
+    for message in messages_result:
+        if message.view:
+            # Organiza as mensagens não lidas
+            messages.append({
+                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
+            })
+        else:
+            # Organiza as mensagens não lidas
+            new_messages.append({
+                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
+            })
+            message.view = True # Atualizar o campo view para True nas mensagens novas
     db.session.commit()
 
     chat = {
@@ -229,7 +234,7 @@ def message_viewed():
     message = Message.query.filter_by(id=message_id).first()
     message.view = True
     db.session.commit()
-    return "FUNCIONOU"
+    return "message view"
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -285,6 +290,8 @@ def user(username):
     # Organiza o json para o javascript
     user = {
         "id": result.id,
+        "followed": False,
+        "follows_me": False,
         "socket_id": result.socket_id,
         "name": result.nome,
         "profile_pic": result.profile_pic,
@@ -302,8 +309,21 @@ def user(username):
     else:
         user["following"] = 0
 
-    if user["id"] == session["user_id"]:
+    if user["id"] == session.get("user_id"):
         return render_template("me.html", user=user)
+    
+
+    profile_id = user["id"]
+    user_id = session.get("user_id") # ID do usuário(eu) 
+
+    # Checa se existe uma lista de seguidores
+    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
+        user["followed"] = True
+    # Checa se existe uma lista de seguidos
+    if Follower.query.filter_by(user_id=profile_id, follower_id=user_id).first():
+        user["follows_me"] = True
+
+
     return render_template("user.html", user=user)
 
 # Editar o perfil do usuário
@@ -493,7 +513,6 @@ def follows():
 @app.route("/follow")
 @login_required
 def follow():
-    # Pega id do perfil independente do método
     profile_id = request.values.get("user")
     user_id = session["user_id"]  # Id do usuário
 
@@ -502,45 +521,50 @@ def follow():
 
     # Obtendo o nome de usuário e a lista de seguidores
     profile_name, profile_socket = profile_infos.nome, profile_infos.socket_id
-    if not profile_name:
-        return error("Algo deu errado", 500)
-    # Checa se o usuário(eu) já segue o perfil
-    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
-        # Parar de seguir 
-        Follower.query.filter_by(user_id=user_id, follower_id=profile_id).delete()
-        db.session.commit()
-    else:
-        # Começar a seguir
-        new_follower = Follower(user_id=user_id, follower_id=profile_id)
-        user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()[0]
-        new_notification = Notification(
-            content=f"@{user_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
-        db.session.add(new_notification)
-        db.session.add(new_follower)
-        db.session.commit()
-        if profile_socket is not None:
-            # Envia a notificação de novo seguidor
-            print(f"Sending notification to user {profile_id} at socket {profile_socket}")
-            socketio.emit("new_follower", {
-                          "follower_id": user_id, "follower_name": session["name"]}, room=profile_socket)
+    
+    # Verifica se a relação de seguimento já existe
+    existing_follower = Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first()
+    if existing_follower:
+        return redirect(f"/{profile_name}")  # Redireciona sem fazer nada
+
+    # Começar a seguir
+    new_follower = Follower(user_id=user_id, follower_id=profile_id)
+    user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()[0]
+    new_notification = Notification(
+        content=f"@{user_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
+    db.session.add(new_notification)
+    db.session.add(new_follower)
+    db.session.commit()
+    if profile_socket is not None:
+        # Envia a notificação de novo seguidor
+        print(f"Sending notification to user {profile_id} at socket {profile_socket}")
+        socketio.emit("new_follower", {
+                      "follower_id": user_id, "follower_name": session["name"]}, room=profile_socket)
     
     # Retorna que o usuário foi seguido
     return redirect(f"/{profile_name}")
 
+@app.route("/unfollow")
+@login_required
+def unfollow():
+    profile_id = request.values.get("user")
+    user_id = session["user_id"]
 
-@app.route("/isFollowed")
-def isFollowed():
-    profile_id = request.args.get("user") # ID do perfil
-    user_id = session["user_id"] # ID do usuário(eu) 
-
-    # Checa se existe uma lista de seguidores
+    profile = User.query.get(profile_id)
+    user = User.query.get(user_id)
+    
+    if profile is None:
+        return error("Algo deu errado", 404)
+    
     if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
-        return jsonify(is_followed=True)
-    # Checa se existe uma lista de seguidos
-    if Follower.query.filter_by(user_id=profile_id, follower_id=user_id).first():
-        return jsonify(is_followed=False, follows_me=True)
+        # Parar de seguir 
+        Follower.query.filter_by(user_id=user_id, follower_id=profile_id).delete()
+        db.session.commit()
 
-    return jsonify(is_followed=False, follows_me=False)
+    # Recarrega a página
+    return redirect(f"/{profile.nome}")
+        
+    
 
 
 @app.route("/login", methods=["GET", "POST"])

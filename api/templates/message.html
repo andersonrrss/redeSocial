@@ -21,7 +21,7 @@
         </header>
         <section id="message_area" class="overflow-auto h-screen overflow-x-hidden w-full p-3 flex flex-col">
             {% for message in chat['messages'] %}
-                {% if message['sender'] == receiver['id'] %}
+                {% if message['sender_id'] == receiver['id'] %}
                     <p class="message received">{{ message['content']}}</p>
                 {% else %}
                     <p class="message sent">{{ message['content']}}</p>
