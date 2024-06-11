@@ -134,14 +134,20 @@ def chat_messages(chat_id):
         if message.view:
             # Organiza as mensagens não lidas
             messages.append({
-                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
+                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
             })
         else:
-            # Organiza as mensagens não lidas
-            new_messages.append({
-                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id
+            if message.sender_id == receiver["id"]:
+                # Organiza as mensagens não lidas
+                new_messages.append({
+                    "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
+                })
+                message.view = True # Atualizar o campo view para True nas mensagens novas
+                continue
+            # Mensagens enviadas por mim
+            messages.append({
+                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
             })
-            message.view = True # Atualizar o campo view para True nas mensagens novas
     db.session.commit()
 
     chat = {
@@ -167,6 +173,7 @@ def send_message():
         message= message_content,
     )
     chat = Chat.query.get(chat_id)
+    # Se algum usuário deletou o chat então ele será mostrado novamente
     if chat.user1_deleted:
         chat.user1_deleted = False
 
@@ -178,16 +185,17 @@ def send_message():
 
     receiver_user = User.query.filter_by(id=receiver_id).first()
     sender_name = User.query.filter_by(id=new_message.sender_id).with_entities(User.nome).first()
-
+    # Organiza as informações
     if receiver_user.socket_id:
         message_data = {
-            "id": new_message.id,
+            "message_id": new_message.id,
             "content": message_content,
             "chat_id": new_message.chat_id,
             "sender_id": sender_id,
             "sender_name": sender_name[0],
             "timestamp": new_message.timestamp.isoformat() 
         }
+        # Emite a notificação
         socketio.emit("new-message", message_data, room=receiver_user.socket_id)
 
     return jsonify(message=message_content)

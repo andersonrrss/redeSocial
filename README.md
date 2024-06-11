@@ -4,9 +4,9 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 03.06.2024`
+`ver - 11.06.2024`
 
-- Reistilização de página de perfil de usuários e otimização simples
+- Início da implementação de responder mensagens em particular
 
 ## A fazer:
 - Responder mensagens em particular
