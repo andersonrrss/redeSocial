@@ -4,6 +4,9 @@ const message_area = document.querySelector("#message_area");
 
 const chat_id = message_form.getAttribute("data-chat-id");
 const receiver_id = message_form.getAttribute("data-receiver-id");
+const replying = false
+
+let reply_id = 0
 
 function scrollToBottom() {
   setTimeout(() => {
@@ -12,6 +15,57 @@ function scrollToBottom() {
 }
 scrollToBottom();
 
+function loadmessage(data, send ){
+  const message_element = document.createElement("div");
+  if (send){
+    // Mensagens enviadas
+    message_element.innerHTML = `
+    <div class="flex w-full items-center justify-end">
+      <button class="reply hidden" message_id="${data.message_id}" onclick="replymessage(this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+      </button>
+
+      <div class="grid message sent">
+        ${data.parent_message ? `
+          <div class="reply_sent">
+            <span class="max-w-[80%] truncate inline-block">
+              ${data.parent_message}
+            </span>
+            <span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg></span>
+        </div>` : ""
+        }
+        <p id="content"> ${data.content} </p>
+      </div>
+    </div>
+    `;
+    message_element.classList = "flex w-full items-center justify-end"
+  } else {
+    // Mensagens recebidas
+    message_element.innerHTML = `
+      <div class="grid message received">
+        ${!!data.parent_message ?
+          `<div class="reply_received"">
+              <span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg></span>
+              <span class="max-w-[80%] truncate inline-block">
+                ${data.parent_message}
+              </span>
+          </div>`
+          : ""
+        }
+        <p id="content">${data.content}</p>
+      </div>
+      <button class="reply hidden" message_id="${data.message_id}" onclick="replymessage(this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+      </button>
+      `;
+      message_element.classList = "flex w-full items-center justify-start"
+  }
+  message_element.addEventListener("mouseover", () => showreply(message_element));
+  message_element.addEventListener("mouseout", () => hidereply(message_element));
+  message_element.setAttribute("message_id", data.message_id)
+  message_area.appendChild(message_element);
+}
+
 message_form.addEventListener("submit", function (event) {
   event.preventDefault();
   const message = message_input.value;
@@ -19,7 +73,7 @@ message_form.addEventListener("submit", function (event) {
     // Checa se alguma mensagem foi digitada
     message_input.value = "";
     fetch(
-      `/sendmessage?message=${message.trim()}&receiver_id=${receiver_id}&chat_id=${chat_id}` // Informações necessárias para o envio da mensagem via servidor
+      `/sendmessage?message=${message.trim()}&receiver_id=${receiver_id}&chat_id=${chat_id}&parent_id=${reply_id}` // Informações necessárias para o envio da mensagem via servidor
     )
       .then((response) => {
         if (!response.ok) {
@@ -28,25 +82,13 @@ message_form.addEventListener("submit", function (event) {
         return response.json();
       })
       .then((data) => {
-        const message_element = document.createElement("div");
-        message_element.innerHTML = `
-          <button class="reply hidden" message_id="${ data.message_id }" onclick="replymessage(this)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-                  <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                    <path d="m7 17l-5-5l5-5m5 10l-5-5l5-5"/><path d="M22 18v-2a4 4 0 0 0-4-4H7"/>
-                  </g>
-              </svg>
-          </button>
-          <p class="message sent"> ${data.message} </p>
-          `;
-        message_element.addEventListener("mouseover", () => showreply(message_element));
-        message_element.addEventListener("mouseout", () => hidereply(message_element));
-        message_element.setAttribute("message_id", data.message_id)
-        message_element.classList = "flex w-full items-center justify-end"
-        message_area.appendChild(message_element);
+        loadmessage(data, true)
         scrollToBottom(); // Rola para o final após adicionar a nova mensagem
         document.getElementById("reply").classList.add("hidden")
-        document.getElementById("reply").classList.remove("flex") // Esconde o elemento que separa as mensagens velhas das novas
+        document.getElementById("reply").classList.remove("flex")
+
+        reply_id = 0
+
         document.getElementById("separator").style.display = "none"; // Esconde o elemento que separa as mensagens velhas das novas
       })
       .catch((err) => {
@@ -60,21 +102,8 @@ message_form.addEventListener("submit", function (event) {
 var socket = io();
 
 socket.on("new-message", function (message) {
-  const message_element = document.createElement("div");
-  message_element.innerHTML = `
-  <button class="reply hidden" message_id="${message.message_id}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-          <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-            <path d="m7 17l-5-5l5-5m5 10l-5-5l5-5"/><path d="M22 18v-2a4 4 0 0 0-4-4H7"/>
-          </g>
-      </svg>
-  </button>
-  <p class="message sent"> ${message.content} </p>
-  `;
-  message_element.setAttribute("message_id", message.message_id)
-  message_element.addEventListener("mouseover", showreply(this));
-  message_element.addEventListener("mouseout", hidereply(this));
-  message_area.appendChild(message_element);
+  loadmessage(message, false)
+  console.log(message.parent_content)
   scrollToBottom(); // Rola para o final após adicionar a nova mensagem
 
   // Informa ao servidor que a mensagem foi lida
@@ -94,13 +123,13 @@ document.querySelector("#deleteReply").addEventListener("click", function(){
 })
 
 function replymessage(reply){
-  const message_id = reply.getAttribute("message_id")
-  const message_content = reply.parentElement.querySelector(".message").innerHTML
+  reply_id = reply.getAttribute("message_id")
+  message_input.focus()
+  const reply_content = reply.parentElement.querySelector("#content").innerHTML
   const input_reply = document.querySelector("#reply")
-  input_reply.querySelector("#text").innerHTML = message_content
+  input_reply.querySelector("#text").innerHTML = reply_content
   input_reply.classList.remove("hidden")
   input_reply.classList.add("flex")
-  scrollToBottom()
 }
 
 function showreply(div) {
@@ -111,4 +140,4 @@ function showreply(div) {
 function hidereply(div) {
   let reply_incon = div.querySelector(".reply");
   reply_incon.classList.add("hidden");
-}
+} 

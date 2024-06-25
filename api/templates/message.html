@@ -1,108 +1,188 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} {% block title %} Conversar {% endblock %} {% block
+script %}
+<script src="../static/js/message.js" defer></script>
+{% endblock %} {% block body %}
+<main
+  class="bg-white w-full md:w-3/4 h-screen text-start flex flex-col overflow-hidden"
+>
+  <header
+    class="border-b border-gray-300 max-h-1/6 p-1 w-full flex items-center"
+  >
+    <a
+      href="/chat"
+      class="w-10 h-full rounded-md hover:bg-gray-300 flex justify-center items-center"
+      style="transition: all 200ms"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="80%"
+        height="80%"
+        viewBox="0 0 512 512"
+      >
+        <path
+          fill="none"
+          stroke="black"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="45"
+          d="M328 112L184 256l144 144"
+        />
+      </svg>
+    </a>
+    <a
+      href="/{{ receiver['name'] }}"
+      class="flex rounded-md hover:bg-gray-300 p-1 items-center w-full md:w-1/2"
+      style="transition: all 200ms"
+    >
+      <img
+        src="{{ url_for('static', filename=receiver['profile_pic']) }}"
+        alt="Foto de perfil"
+        class="w-8 mx-2 rounded-full"
+      />
+      <span class="font-semibold">@{{ receiver["name"] }}</span>
+    </a>
+  </header>
+  <section id="message_area" class="overflow-auto h-screen overflow-x-hidden w-full p-3 flex flex-col">
+    {% for message in chat['messages'] %} 
+    {% if message['sender_id'] == receiver['id'] %}
 
-{% block title %}
-    Conversar
-{% endblock %}
+    <div class="flex w-full items-center justify-start" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
+        <div class="grid message received">
+        {% if message['parent_content'] is not none %}
+          <div class="reply_received">
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+              </span>
+              <span class="max-w-[80%] truncate inline-block">
+                {{ message["parent_content"] }}
+              </span>
+          </div>
+        {% endif %}
+      
+          <p id="content">{{ message['content']}}</p>
+        </div>
+      <button class="reply hidden" message_id="{{ message['message_id'] }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+      </button>
+    </div>
 
-{% block script %}
-<script src="../static/js/message.js" defer> </script>
-{% endblock %}
+    {% else %}
 
-{% block body %}
-    <main class="bg-white w-full md:w-3/4 h-screen text-start flex flex-col overflow-hidden ">
-        <header class="border-b border-gray-300 max-h-1/6 p-1 w-full flex items-center">
-            <a href="/chat" class="w-10 h-full rounded-md hover:bg-gray-300 flex justify-center items-center" style="transition: all 200ms;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 512 512"><path fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="45" d="M328 112L184 256l144 144"/></svg>
-            </a>
-            <a href="/{{ receiver['name'] }}" class="flex rounded-md hover:bg-gray-300 p-1 items-center w-full md:w-1/2" style="transition: all 200ms;">
-                <img src="{{ url_for('static', filename=receiver['profile_pic']) }}" alt="Foto de perfil" class="w-8 mx-2 rounded-full">
-                <span class="font-semibold">@{{ receiver["name"] }}</span>
-            </a>
-        </header>
-        <section id="message_area" class="overflow-auto h-screen overflow-x-hidden w-full p-3 flex flex-col">
-            {% for message in chat['messages'] %}
-                {% if message['sender_id'] == receiver['id'] %}
+    <div class="flex w-full items-center justify-end" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
+      <button class="reply hidden" message_id="{{ message['message_id'] }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+      </button>
+      <div class="grid message sent">
+        {% if message['parent_content'] is not none %}
+        <div class="reply_sent">
+            <span class="max-w-[80%] truncate inline-block">
+              {{ message["parent_content"] }}
+            </span>
+            <span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg></span>
+        </div>
+        {% endif %}
+      
+      <p id="content">{{ message['content']}}</p>
+    </div>
+    </div>
 
-                    <div class="flex w-full items-center justify-start" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
-                        <p class="message received">{{ message['content']}}</p>
-                        <button class="reply hidden" message_id="{{ message['message_id'] }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" transform="scale(-1, 1)" >
-                                <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                                  <path d="m7 17l-5-5l5-5m5 10l-5-5l5-5"/>
-                                  <path d="M22 18v-2a4 4 0 0 0-4-4H7"/>
-                                </g>
-                            </svg>
-                        </button>
-                    </div>
-
-                {% else %}
-
-                    <div class="flex w-full items-center justify-end" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
-                        <button class="reply hidden" message_id="{{ message['message_id'] }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-                                <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                                    <path d="m7 17l-5-5l5-5m5 10l-5-5l5-5"/><path d="M22 18v-2a4 4 0 0 0-4-4H7"/>
-                                </g>
-                            </svg>
-                        </button>
-                        <p class="message sent">{{ message['content']}}</p>
-                    </div>
-        
-                {% endif %}
-            {% endfor %}
-            {% if chat['new_messages']%}
-                <!-- Separador de novas mensagens -->
-                <div class="my-4 flex items-center" id="separator">
-                    <div class="flex-grow h-1 border-t border-gray-500"></div>
-                    <span class="mx-2 text-gray-700 font-semibold">Novas mensagens!!</span>
-                    <div class="flex-grow h-1 border-t border-gray-500"></div>
-                </div>
-                {% for message in chat['new_messages'] %}
-                    <div class="flex w-full items-center justify-start" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
-                        <p class="message received">{{ message['content']}}</p>
-                        <button class="reply hidden" message_id="{{ message['message_id'] }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" transform="scale(-1, 1)" >
-                                <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                                  <path d="m7 17l-5-5l5-5m5 10l-5-5l5-5"/>
-                                  <path d="M22 18v-2a4 4 0 0 0-4-4H7"/>
-                                </g>
-                            </svg>
-                        </button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        </section>
-        <footer class="w-full p-2 px-3 h-max-2/6">
-            <div id="reply" class="text-gray-600 hidden overflow-hidden text-xs whitespace-nowrap m-2 mx-4 justify-between p-3 border-l-2 border-l-gray-600 bg-gray-100 rounded-sm">
-                <div class="grid">
-                    <span>Respondendo a:</span>
-                    <span id="text" class="max-w-[50%] truncate inline-block"></span>
-                </div>
-
-                <button class="outline-none" id="deleteReply">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 40 40">
-                        <path fill="black" d="M21.499 19.994L32.755 8.727a1.064 1.064 0 0 0-.001-1.502c-.398-.396-1.099-.398-1.501.002L20 18.494L8.743 7.224c-.4-.395-1.101-.393-1.499.002a1.05 1.05 0 0 0-.309.751c0 .284.11.55.309.747L18.5 19.993L7.245 31.263a1.064 1.064 0 0 0 .003 1.503c.193.191.466.301.748.301h.006c.283-.001.556-.112.745-.305L20 21.495l11.257 11.27c.199.198.465.308.747.308a1.058 1.058 0 0 0 1.061-1.061c0-.283-.11-.55-.31-.747z"/>
-                    </svg>
-                </button>
-            </div>
-            <form class="flex w-full" data-chat-id="{{ chat['id'] }}" data-receiver-id="{{ receiver['id'] }}" id="message_form">
-                <input id="message_input" type="text" name="message" autocomplete="off" autocapitalize="on" placeholder="Envie uma mensagem" class="bg-gray-200 p-3 rounded-lg w-full mx-3 outline-none focus:border-shadow" style="transition: all 350ms;">
-                <button type="submit" class="flex justify-center items-center w-14 bg-purple-700 rounded-md hover:bg-purple-800 p-1 ">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" viewBox="0 0 24 24">
-                        <path fill="white" d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"/>
-                    </svg>
-                </button>
-            </form>
-        </footer>
-        
-        <!-- Oculta a navbar padrão do site -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          navbar = document.querySelector(".navbar");
-          navbar.style.display = "none";
-          window.localStorage.removeItem("searchHistory");
-        });
-      </script>
-    </main>
+    {% endif %} {% endfor %} {% if chat['new_messages']%}
+    <!-- Separador de novas mensagens -->
+    <div class="my-4 flex items-center" id="separator">
+      <div class="flex-grow h-1 border-t border-gray-500"></div>
+      <span class="mx-2 text-gray-700 font-semibold">Novas mensagens!!</span>
+      <div class="flex-grow h-1 border-t border-gray-500"></div>
+    </div>
+    {% for message in chat['new_messages'] %}
+    <div class="flex w-full items-center justify-start" onmouseover="showreply(this)" onmouseout="hidereply(this)" message_id="{{ message['message_id'] }}">
+      <div class="grid message received">
+      {% if message['parent_content'] is not none %}
+        <div class="reply_received">
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+            </span>
+            <span class="max-w-[80%] truncate inline-block">
+              {{ message["parent_content"] }}
+            </span>
+        </div>
+      {% endif %}
     
+        <p id="content">{{ message['content']}}</p>
+      </div>
+    <button class="reply hidden" message_id="{{ message['message_id'] }}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
+    </button>
+  </div>
+
+    {% endfor %} {% endif %}
+  </section>
+  <footer class="w-full p-2 px-3 h-max-2/6">
+    <div
+      id="reply"
+      class="text-gray-600 hidden overflow-hidden text-xs whitespace-nowrap m-2 mx-4 justify-between p-3 border-l-2 border-l-gray-600 bg-gray-100 rounded-sm"
+    >
+      <div class="grid">
+        <span>Respondendo a:</span>
+        <span id="text" class="max-w-[50%] truncate inline-block"></span>
+      </div>
+
+      <button class="outline-none" id="deleteReply">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 40 40"
+        >
+          <path
+            fill="black"
+            d="M21.499 19.994L32.755 8.727a1.064 1.064 0 0 0-.001-1.502c-.398-.396-1.099-.398-1.501.002L20 18.494L8.743 7.224c-.4-.395-1.101-.393-1.499.002a1.05 1.05 0 0 0-.309.751c0 .284.11.55.309.747L18.5 19.993L7.245 31.263a1.064 1.064 0 0 0 .003 1.503c.193.191.466.301.748.301h.006c.283-.001.556-.112.745-.305L20 21.495l11.257 11.27c.199.198.465.308.747.308a1.058 1.058 0 0 0 1.061-1.061c0-.283-.11-.55-.31-.747z"
+          />
+        </svg>
+      </button>
+    </div>
+    <form
+      class="flex w-full"
+      data-chat-id="{{ chat['id'] }}"
+      data-receiver-id="{{ receiver['id'] }}"
+      id="message_form"
+    >
+      <input
+        id="message_input"
+        type="text"
+        name="message"
+        autocomplete="off"
+        autocapitalize="on"
+        placeholder="Envie uma mensagem"
+        class="bg-gray-200 p-3 rounded-lg w-full mx-3 outline-none focus:border-shadow"
+        style="transition: all 350ms"
+      />
+      <button
+        type="submit"
+        class="flex justify-center items-center w-14 bg-purple-700 rounded-md hover:bg-purple-800 p-1"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="80%"
+          height="80%"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="white"
+            d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"
+          />
+        </svg>
+      </button>
+    </form>
+  </footer>
+
+  <!-- Oculta a navbar padrão do site -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      navbar = document.querySelector(".navbar");
+      navbar.style.display = "none";
+      window.localStorage.removeItem("searchHistory");
+    });
+  </script>
+</main>
+
 {% endblock %}

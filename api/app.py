@@ -131,23 +131,39 @@ def chat_messages(chat_id):
     messages = []
     new_messages = []
     for message in messages_result:
+        parent_content = None
+        if message.parent_id:
+            reply = Message.query.get(message.parent_id)
+            parent_content = reply.message
         if message.view:
             # Organiza as mensagens não lidas
             messages.append({
-                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
+                "timestamp":message.timestamp, 
+                "content":message.message, 
+                "sender_id":message.sender_id, 
+                "message_id":message.id, 
+                "parent_content": parent_content
             })
         else:
             if message.sender_id == receiver["id"]:
                 # Organiza as mensagens não lidas
                 new_messages.append({
-                    "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
+                    "timestamp":message.timestamp,  
+                    "content":message.message, 
+                    "sender_id":message.sender_id, 
+                    "message_id":message.id, 
+                    "parent_content": parent_content
                 })
                 message.view = True # Atualizar o campo view para True nas mensagens novas
-                continue
-            # Mensagens enviadas por mim
-            messages.append({
-                "timestamp":message.timestamp, "content":message.message, "sender_id":message.sender_id, "message_id":message.id, "parent_id": message.parent_id
-            })
+            else: 
+                # Mensagens enviadas por mim
+                messages.append({
+                    "timestamp":message.timestamp, 
+                    "content":message.message, 
+                    "sender_id":message.sender_id, 
+                    "message_id":message.id, 
+                    "parent_content": parent_content
+                })
     db.session.commit()
 
     chat = {
@@ -165,12 +181,17 @@ def send_message():
     receiver_id = request.args.get("receiver_id")
     message_content = request.args.get("message")
     sender_id = session.get("user_id")
+    try: 
+        parent_id = int(request.args.get("parent_id")) 
+    except: 
+        parent_id = 0
 
     new_message = Message(
         chat_id= chat_id,
         sender_id= sender_id,
         receiver_id= receiver_id,
         message= message_content,
+        parent_id= parent_id
     )
     chat = Chat.query.get(chat_id)
     # Se algum usuário deletou o chat então ele será mostrado novamente
@@ -182,6 +203,11 @@ def send_message():
         
     db.session.add(new_message)
     db.session.commit()
+    
+    parent_message = None
+    if parent_id != 0:
+        parent_content = Message.query.filter_by(id=parent_id).first()
+        parent_message = parent_content.message
 
     receiver_user = User.query.filter_by(id=receiver_id).first()
     sender_name = User.query.filter_by(id=new_message.sender_id).with_entities(User.nome).first()
@@ -193,12 +219,14 @@ def send_message():
             "chat_id": new_message.chat_id,
             "sender_id": sender_id,
             "sender_name": sender_name[0],
-            "timestamp": new_message.timestamp.isoformat() 
+            "timestamp": new_message.timestamp.isoformat(),
+            "parent_message": parent_message
         }
+       
         # Emite a notificação
         socketio.emit("new-message", message_data, room=receiver_user.socket_id)
 
-    return jsonify(message=message_content)
+    return jsonify({"content":message_content, "message_id": new_message.id, "parent_message": parent_message})
 
 @app.route("/newchat")
 @login_required
