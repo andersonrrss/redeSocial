@@ -5,11 +5,11 @@
 {% endblock %}
 
 {% block body %}
-    <main class="bg-white w-full md:w-3/4 h-screen text-start py-10 px-5 md:px-16 flex flex-col">
+    <main class="bg-white w-full md:w-3/4 h-screen text-start py-20 md:py-5 px-5 md:px-16 flex flex-col">
         <header class="border-b border-gray-400 pb-10">
             <div class="flex">
                 <div class="mr-5 sm:mx-10">
-                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-40 rounded-full">
+                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-20 md:w-40 rounded-full">
                 </div>
                 <div>
                     <h2 class="text-lg font-semibold">@{{ user["name"] }}</h2>

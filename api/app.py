@@ -135,35 +135,26 @@ def chat_messages(chat_id):
         if message.parent_id:
             reply = Message.query.get(message.parent_id)
             parent_content = reply.message
+        
+        message_data = {
+            "timestamp":message.timestamp, 
+            "content":message.message, 
+            "sender_id":message.sender_id, 
+            "message_id":message.id, 
+            "parent_content": parent_content,
+            "parent_id": message.parent_id
+        }
         if message.view:
             # Organiza as mensagens não lidas
-            messages.append({
-                "timestamp":message.timestamp, 
-                "content":message.message, 
-                "sender_id":message.sender_id, 
-                "message_id":message.id, 
-                "parent_content": parent_content
-            })
+            messages.append(message_data)
         else:
             if message.sender_id == receiver["id"]:
                 # Organiza as mensagens não lidas
-                new_messages.append({
-                    "timestamp":message.timestamp,  
-                    "content":message.message, 
-                    "sender_id":message.sender_id, 
-                    "message_id":message.id, 
-                    "parent_content": parent_content
-                })
+                new_messages.append(message_data)
                 message.view = True # Atualizar o campo view para True nas mensagens novas
             else: 
                 # Mensagens enviadas por mim
-                messages.append({
-                    "timestamp":message.timestamp, 
-                    "content":message.message, 
-                    "sender_id":message.sender_id, 
-                    "message_id":message.id, 
-                    "parent_content": parent_content
-                })
+                messages.append(message_data)
     db.session.commit()
 
     chat = {
@@ -220,13 +211,14 @@ def send_message():
             "sender_id": sender_id,
             "sender_name": sender_name[0],
             "timestamp": new_message.timestamp.isoformat(),
-            "parent_message": parent_message
+            "parent_message": parent_message,
+            "parent_id": parent_id
         }
        
         # Emite a notificação
         socketio.emit("new-message", message_data, room=receiver_user.socket_id)
 
-    return jsonify({"content":message_content, "message_id": new_message.id, "parent_message": parent_message})
+    return jsonify({"content":message_content, "message_id": new_message.id, "parent_message": parent_message, "parent_id": parent_id})
 
 @app.route("/newchat")
 @login_required
@@ -698,4 +690,5 @@ if __name__ == "__main__":
     # Criar as tabelas no banco de dados
     with app.app_context():
         db.create_all()
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port=5000)
+

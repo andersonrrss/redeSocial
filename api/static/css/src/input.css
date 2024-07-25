@@ -3,11 +3,25 @@
 @tailwind utilities;
 
 @layer components {
-  /* Add this custom CSS */
+  html,
+  body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  }
+  body {
+  background-color: #eeeeee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+  .h-screen-dynamic{
+    height: 100dvh;
+  }
+
   .no-bg-img {
     background-image: none !important;
   }
-
   .btn {
     background-color: #7e22ce;
     color: white;
@@ -17,9 +31,6 @@
   .btn:hover {
     background-color: #6b21a8;
   }
-}
-
-@layer components {
   .notificacao {
     display: flex;
     justify-content: space-between;
@@ -70,6 +81,13 @@
     border-radius: 10px;
     margin: 5px;
     word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .message p{
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .message.sent {
@@ -82,10 +100,18 @@
     align-self: flex-start; /* Alinha as mensagens recebidas à esquerda */
   }
   .reply_sent{
-    @apply bg-purple-300 border-l-2 p-1 border-purple-950 rounded-sm text-sm flex items-center
+    @apply bg-purple-300 border-l-2 p-1 border-purple-950 rounded-sm text-sm flex items-center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    padding: 5px
   }
   .reply_received{
-    @apply bg-gray-300 p-1 rounded-sm border-l-2 border-gray-950 flex items-center text-sm text-gray-900
+    @apply bg-gray-300 p-1 rounded-sm border-l-2 border-gray-950 flex items-center text-sm text-gray-900;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    padding: 5px;
   }
   .dropdown-menu{
     position: absolute;

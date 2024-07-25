@@ -20,14 +20,13 @@ function loadmessage(data, send ){
   if (send){
     // Mensagens enviadas
     message_element.innerHTML = `
-    <div class="flex w-full items-center justify-end">
       <button class="reply hidden" message_id="${data.message_id}" onclick="replymessage(this)">
           <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg>
       </button>
 
-      <div class="grid message sent">
-        ${data.parent_message ? `
-          <div class="reply_sent">
+      <div class="flex flex-col message sent">
+        ${data.parent_id > 0 ? `
+          <div class="reply_sent" parent_id="${data.parent_id}">
             <span class="max-w-[80%] truncate inline-block">
               ${data.parent_message}
             </span>
@@ -42,9 +41,9 @@ function loadmessage(data, send ){
   } else {
     // Mensagens recebidas
     message_element.innerHTML = `
-      <div class="grid message received">
-        ${!!data.parent_message ?
-          `<div class="reply_received"">
+      <div class="flex flex-col message received">
+        ${!!data.parent_id > 0?
+          `<div class="reply_received" parent_id="${data.parent_id}">
               <span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" transform="scale(-1,1)" viewBox="0 0 24 24"><path fill="black" d="m6.825 12l2.9 2.9q.3.3.288.7t-.313.7q-.3.275-.7.288t-.7-.288l-4.6-4.6q-.3-.3-.3-.7t.3-.7l4.6-4.6q.275-.275.688-.275T9.7 5.7q.3.3.3.713t-.3.712L6.825 10H16q2.075 0 3.538 1.463T21 15v3q0 .425-.288.713T20 19t-.712-.288T19 18v-3q0-1.25-.875-2.125T16 12z"/></svg></span>
               <span class="max-w-[80%] truncate inline-block">
                 ${data.parent_message}
@@ -62,7 +61,7 @@ function loadmessage(data, send ){
   }
   message_element.addEventListener("mouseover", () => showreply(message_element));
   message_element.addEventListener("mouseout", () => hidereply(message_element));
-  message_element.setAttribute("message_id", data.message_id)
+  message_element.setAttribute("id", data.message_id)
   message_area.appendChild(message_element);
 }
 
@@ -123,7 +122,8 @@ document.querySelector("#deleteReply").addEventListener("click", function(){
 })
 
 function replymessage(reply){
-  reply_id = reply.getAttribute("message_id")
+  reply_id = reply.parentElement.getAttribute("id")
+  console.log(reply_id)
   message_input.focus()
   const reply_content = reply.parentElement.querySelector("#content").innerHTML
   const input_reply = document.querySelector("#reply")

@@ -4,12 +4,10 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 11.06.2024`
-
-- Início da implementação de responder mensagens em particular
+`ver - 26.07.2024`
 
 ## A fazer:
-- Responder mensagens em particular
+- Traduzir JS -> TS
 - Excluir mensagens
 - Refazer campo de envio de mensagens para que obedeça a formatação que o usuário desejar
 
