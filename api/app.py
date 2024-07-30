@@ -55,7 +55,18 @@ def index():
 @app.route("/add")
 @login_required
 def add():
-    return error("Pra fazer", 404)
+    if "user_id" in session:
+        user = User.query.get(session.get("user_id"))
+        profile_pic = user.profile_pic
+    return render_template("add.html", profile_pic=profile_pic)
+    
+@app.route("/add1")
+@login_required
+def add1():
+    if "user_id" in session:
+        user = User.query.get(session.get("user_id"))
+        profile_pic = user.profile_pic
+    return render_template("add1.html", profile_pic=profile_pic)
 
 
 @app.route("/chat")
@@ -165,6 +176,19 @@ def chat_messages(chat_id):
 
     return render_template("message.html", receiver=receiver, chat=chat)
 
+
+@app.route("/deletechat", methods=["POST"])
+@login_required
+def delete_chat():
+    chat_id = request.form.get("chat_id")
+    user_id = session.get("user_id")
+    if chat_id and user_id:
+        delete_chat_for_user(chat_id, user_id)
+        return redirect("/chat")
+    else:
+        return error("Algo deu errado", 500)
+
+
 @app.route("/sendmessage")
 @login_required
 def send_message():
@@ -220,6 +244,7 @@ def send_message():
 
     return jsonify({"content":message_content, "message_id": new_message.id, "parent_message": parent_message, "parent_id": parent_id})
 
+
 @app.route("/newchat")
 @login_required
 def newchat():
@@ -244,16 +269,6 @@ def newchat():
 
     return redirect(f"/chat/{chat_id}")
 
-@app.route("/deletechat", methods=["POST"])
-@login_required
-def delete_chat():
-    chat_id = request.form.get("chat_id")
-    user_id = session.get("user_id")
-    if chat_id and user_id:
-        delete_chat_for_user(chat_id, user_id)
-        return redirect("/chat")
-    else:
-        return error("Algo deu errado", 500)
 
 @app.route("/messageviewed")
 @login_required
@@ -535,8 +550,6 @@ def follows():
 
         return jsonify(has_follows=True, follows_infos=following_users)
 
-# Aceita ambos os métodos
-
 
 @app.route("/follow")
 @login_required
@@ -593,8 +606,6 @@ def unfollow():
     return redirect(f"/{profile.nome}")
         
     
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -684,6 +695,7 @@ def inject_user():
     if "user_id" in session:
         username = session["name"]
     return dict(username=username)
+
 
 
 if __name__ == "__main__":

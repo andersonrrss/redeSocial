@@ -14,6 +14,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  font: normal 14px;
+  
   }
   .h-screen-dynamic{
     height: 100dvh;
@@ -40,7 +42,7 @@
     @apply rounded-md;
     border: solid 2px #c084fc;
   }
-  .register-input {
+  .standard-input {
     outline: none;
     color: black;
     margin: 0.5em 0;
@@ -52,14 +54,14 @@
       drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
     transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
   }
-  .register-input:focus,
-  .register-input.focado {
-    box-shadow: 0px 0px 0px 2px #242424;
+  .standard-input:focus,
+  .standard-input.focado {
+    box-shadow: 0px 0px 0px 2px #525252;
   }
-  .register-input::placeholder,
+  .standard-input::placeholder,
   .password::placeholder {
-    color: #5c5c5c;
-  }
+    color: #4b4b4b;
+  } 
 
   .invalid-input {
     border-color: #ff3f3f !important;
@@ -127,7 +129,11 @@
     max-height: 150px; /* ou um valor suficientemente grande */
     opacity: 1;
 }
-  .no-hover:hover {
-    background-color: inherit !important;
+.preview img,
+.preview video {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  object-fit: contain;
 }
 }

@@ -1,4 +1,3 @@
-
 .navbar {
   position: fixed;
   display: flex;
@@ -17,11 +16,11 @@
   margin: 4px 0;
   transition: all 500ms;
 }
-.navbar-btn:hover{
+.navbar-btn:hover {
   background-color: #f3e8ff;
 }
 
-.disabled{
+.disabled {
   background-color: #865daa !important;
   color: #b8b8b8 !important;
 }
@@ -49,7 +48,7 @@ button {
   padding-inline: 0.8em;
   border-radius: var(--border-radius);
   transition: border-radius 0.5s ease;
-  background: var(--input-bg,#fff);
+  background: var(--input-bg, #fff);
 }
 /* styling of animated border */
 .form:before {
