@@ -22,7 +22,7 @@ class User(db.Model):
     nome = db.Column(db.String(45), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     senha_hash = db.Column(db.String(255), nullable=False)
-    profile_pic = db.Column(db.Text, nullable=False, default='/images/profile/default.jpg')
+    profile_pic = db.Column(db.Text, nullable=False, default='/images/profile_pics/default.jpg')
     bio = db.Column(db.String(150), default='Olá! Tudo bem?')
     creation = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     
@@ -47,7 +47,7 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.String(500), nullable=False)
+    content = db.Column(db.String(1500))
     image_path = db.Column(db.Text)
     likes = db.relationship('User', secondary='likes', backref='liked_posts')
 

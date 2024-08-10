@@ -7,3 +7,7 @@ SESSION_TYPE = 'filesystem'
 # Configurações do SQLAlchemy
 SQLALCHEMY_DATABASE_URI = 'sqlite:///data.db'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
+# Diretório onde as imagens serão salvas
+UPLOAD_FOLDER = 'api/static/images/posts'

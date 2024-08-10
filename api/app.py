@@ -1,16 +1,20 @@
+import os
 import re
 
-from flask import Flask, render_template, jsonify, redirect, request, session
+from flask import Flask, render_template, jsonify, redirect, request, session, url_for
 from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
-from helpers import error, login_required, delete_chat_for_user, get_messages_for_chat
+from helpers import allowed_file, error, login_required, delete_chat_for_user, get_messages_for_chat
 from models import db, User, Message, Notification, Comment, Post, Chat, Follower
-from sqlalchemy import or_
+from PIL import Image
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
+# Certifica que a pasta de uploads existe
+os.makedirs("api/static/images/posts", exist_ok=True)
 
-# Configure application
+# Configurações da aplicação
 app = Flask(__name__)
 app.config.from_pyfile("config.py")
 # Banco de dados
@@ -23,24 +27,24 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
-
+# Conecta o usuário
 @socketio.on("connect")
 def handle_connect():
     user_id = session.get("user_id")
     user = User.query.filter_by(id=user_id).first()
     if user:
-        user.socket_id = request.sid
+        user.socket_id = request.sid # Atualiza o SId do usuário
         db.session.commit()
 
         print(f"user {user_id} connected!!!")
 
-
+# Desconecta o usuário
 @socketio.on('disconnect')
 def handle_disconnect():
     user_id = session.get("user_id")
     user = User.query.filter_by(id=user_id)
     if user:
-        user.socket_id = None
+        user.socket_id = None # Retira o SId do usuário
         db.session.commit()
 
         print(f"User {user_id} disconnected\n")
@@ -51,23 +55,55 @@ def handle_disconnect():
 def index():
     return render_template("index.html")
 
-
-@app.route("/add")
+# Adicionar uma nova publicação
+@app.route("/add", methods=["POST", "GET"])
 @login_required
 def add():
+    # Método POST se responsabiliza por adicionar o novo POST ao banco de dados
+    if request.method == "POST":
+        text = request.values.get("text")
+        if not text or len(text.strip()) == 0:
+            text = None # Garante que text seja None se o usuário não digitar nada
+
+        # Cria o novo post
+        new_post = Post(
+            user_id = session.get("user_id"),
+            content = text,
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        
+        image = request.files['image']
+        if image:
+            if not allowed_file(image.filename):
+                return error("O tipo de imagem não é suportado", 500)
+            
+            image_name = secure_filename(image.filename) # Nome da imagem
+            ext = image_name.rsplit('.', 1)[1].lower() # Extrai a extensão da imagem
+            new_image_name = f"{new_post.id}.{ext}" # Renomeia a imagem com o id do post
+
+            # Redimensionar a imagem para uma qualidade padrão
+            img = Image.open(image)
+            img = img.resize((800, 800), Image.Resampling.LANCZOS)
+            
+            # Salvar a imagem na página dos posts
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_image_name)
+            img.save(image_path, quality=85)
+            # Adiciona a imagem ao post
+            new_post.image_path = image_path
+        else:
+            # ISSO É REALMENTE NECESSÁRIO?
+            image_path = None # Garante que o image path seja None se o usuário não colocou nenhuma imagem
+
+        db.session.commit()
+        return redirect(url_for('index'))
+    
+    # Carrega a página para adicionar um novo post
     if "user_id" in session:
         user = User.query.get(session.get("user_id"))
         profile_pic = user.profile_pic
     return render_template("add.html", profile_pic=profile_pic)
     
-@app.route("/add1")
-@login_required
-def add1():
-    if "user_id" in session:
-        user = User.query.get(session.get("user_id"))
-        profile_pic = user.profile_pic
-    return render_template("add1.html", profile_pic=profile_pic)
-
 
 @app.route("/chat")
 @login_required
@@ -592,7 +628,6 @@ def unfollow():
     user_id = session["user_id"]
 
     profile = User.query.get(profile_id)
-    user = User.query.get(user_id)
     
     if profile is None:
         return error("Algo deu errado", 404)

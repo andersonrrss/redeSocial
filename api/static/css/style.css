@@ -77,3 +77,63 @@ input:not(:placeholder-shown) ~ .reset {
   opacity: 1;
   visibility: visible;
 }
+
+li.emoji-selector {
+  background-color: white;
+  border-radius: 1rem;
+  cursor: default;
+  display: block;
+  padding: 0;
+  border: 1px solid #eee;
+  position: absolute;
+  bottom: 0%;
+  width: 325px;
+  height: 350px;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  overflow: auto;
+  transition: bottom 0.3s ease, opacity 0.3s ease;
+}
+li.emoji-selector.active {
+  bottom: 110%;
+  opacity: 1;
+  pointer-events: all;
+}
+li.emoji-selector .input-container {
+  padding: 1rem;
+  background-color: white;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+li.emoji-selector .input-container input {
+  border-radius: 25px;
+  border: 1px solid #eee;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  outline: none;
+}
+li.emoji-selector ul.emoji-list {
+  background-color: white;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  padding: 0 1rem 1rem;
+  border-radius: 0;
+}
+li.emoji-selector ul.emoji-list li {
+  height: 35px;
+  width: 35px;
+  border-radius: 0.25rem;
+  font-size: 1.5rem;
+}
+.emojiChar{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+.emojiChar:active {
+  background-color: #e5e7eb;
+}
