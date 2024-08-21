@@ -5,34 +5,34 @@
 {% endblock %}
 
 {% block body %}
-    <main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start py-5 px-5 md:px-16 flex flex-col">
-        <header class="border-b border-gray-400 pb-10">
-            <div class="flex">
-                <div class="mr-5 sm:mx-10">
-                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-20 md:w-40 rounded-full">
+    <main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start flex flex-col p-5">
+        <header class="border-b border-gray-400 pb-6">
+            <div class="flex mt-3 pl-3 sm:pl-10">
+                <div class="mr-8 w-[140px]">
+                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-full rounded-full">
                 </div>
-                <div>
-                    <h2 class="text-lg font-semibold">@{{ user["name"] }}</h2>
-                        <div class="flex flex-wrap items-center text-center font-semibold mt-2 text-xs sm:text-base">
-                            <a href="/{{ user['name'] }}/followers" class="text-center mr-2 sm:mr-10 grid sm:flex items-center">
-                                <span class="self-center sm:mr-2">{{ user["followers"] }} </span>
-                                Seguidores
+                <div class="mt-5">
+                    <div class="flex items-center flex-wrap">
+                        <h2 class="text-[18px] font-semibold mr-5">@{{ user["name"] }}</h2>
+                        <div class="flex text-[14px] md:text-[16px]">
+                            <a href="/{{ user['name'] }}/followers" class="text-center mr-5 flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["followers"]}}</span> 
+                                seguidores
                             </a>
-                            <a href="/{{ user['name'] }}/following" class="text-center grid sm:flex items-center">
-                                <span class="self-center sm:mr-2">{{ user["following"] }} </span>
-                                Seguindo
+                            <a href="/{{ user['name'] }}/following" class="text-center flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["following"]}} </span> 
+                                seguindo
                             </a>
                         </div>
-                        <div class="hidden sm:block w-full my-7">
+                    </div>
+                        <div class="relative z-10 block max-w-[%] my-3 text-[15px] text-justify">
                             <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
                         </div>
                 </div>
             </div>
-            <div class="block sm:hidden w-full my-7">
-                <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
-            </div>
+
             
-            <div class="mt-5 grid sm:flex">
+            <div class="mt-5 flex sm:px-3">
                 <a href="/edit" class="flex justify-center items-center w-full p-2 m-1 text-white font-semibold text-center rounded-md bg-purple-700 hover:bg-purple-800 cursor-pointer">
                     <span class="mr-2">Editar perfil</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m14.304 4.844l2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565l6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"/></svg>
@@ -44,9 +44,19 @@
             </div>
         </header>
         <section class="flex justify-center items-center h-full">
-            <span>
-                Sem publicações ainda
-            </span>
+            {% if user.posts %}
+                {% for post in user.posts %}   
+                    {% if post['image_path'] %}
+                        <a href="/post?id={{ post['id'] }}">
+                            <img src="{{ url_for('static', filename=post.image_path) }}" width="200px">
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <span>
+                    Sem publicações ainda
+                </span>
+            {% endif %}
         </section>
     </main>
 {% endblock %}

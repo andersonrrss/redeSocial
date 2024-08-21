@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block title %}
+Post
+{% endblock %}
+{% block body %}
+<main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start flex flex-col p-5">
+    <img src="{{ url_for('static', filename=post['image_path']) }}" width="100%">
+    <p>{{ post['content'] }}</p>
+</main>
+
+{% endblock %}

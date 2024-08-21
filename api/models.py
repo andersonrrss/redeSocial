@@ -26,6 +26,8 @@ class User(db.Model):
     bio = db.Column(db.String(150), default='Olá! Tudo bem?')
     creation = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     
+    posts = db.relationship('Post', backref='user', lazy=True)
+
     followers = db.relationship(
         'User', secondary='followers',
         primaryjoin=(id == Follower.follower_id),

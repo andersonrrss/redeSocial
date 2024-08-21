@@ -2,12 +2,13 @@ import os
 import re
 
 from flask import Flask, render_template, jsonify, redirect, request, session, url_for
+from flask_migrate import Migrate
 from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from helpers import allowed_file, error, login_required, delete_chat_for_user, get_messages_for_chat
-from models import db, User, Message, Notification, Comment, Post, Chat, Follower
-from PIL import Image
+from models import db, User, Message, Notification, Comment, Post, Chat, Follower, Like
+from PIL import Image, ExifTags
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -22,6 +23,9 @@ db.init_app(app)
 # Sessão
 Session(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Inicialize Flask-Migrate
+migrate = Migrate(app, db)
 
 
 # Expressão regular para verificar o formato do email
@@ -82,15 +86,35 @@ def add():
             ext = image_name.rsplit('.', 1)[1].lower() # Extrai a extensão da imagem
             new_image_name = f"{new_post.id}.{ext}" # Renomeia a imagem com o id do post
 
-            # Redimensionar a imagem para uma qualidade padrão
+            # Abre a imagem
             img = Image.open(image)
-            img = img.resize((800, 800), Image.Resampling.LANCZOS)
+
+            # Corrige a orientação da imagem se houver informações EXIF
+            try:
+                for orientation in ExifTags.TAGS.keys(): # Percorre as chaves dos metadados EXIF para encontrar a orientação
+                    if ExifTags.TAGS[orientation] == 'Orientation': # Identifica o código da orientação
+                        break # Interrompe o loop quando encontra a chave da orientação
+
+                exif = img._getexif() # Obtém os metadados EXIF da imagem
+                if exif is not None: # Verifica se a imagem possui metadados EXIF
+                    orientation = exif.get(orientation, None) # Obtém o valor da orientação, se disponível
+
+                    if orientation == 3:
+                        img = img.rotate(180, expand=True)  # Rotaciona a imagem em 180 graus
+                    elif orientation == 6:
+                        img = img.rotate(270, expand=True)  # Rotaciona a imagem em 270 graus (90 graus no sentido horário)
+                    elif orientation == 8:
+                        img = img.rotate(90, expand=True)  # Rotaciona a imagem em 90 graus (90 graus no sentido anti-horário)
+            except (AttributeError, KeyError, IndexError):  # Captura possíveis erros ao acessar os metadados EXIF
+                # Se houver um erro ou a imagem não possuir EXIF, ignora a correção de orientação
+                pass
             
             # Salvar a imagem na página dos posts
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_image_name)
-            img.save(image_path, quality=85)
+            img.save(image_path, quality=90)
             # Adiciona a imagem ao post
-            new_post.image_path = image_path
+            relative_image_path = f"images/posts/{new_image_name}" # Salvando apenas o caminho relativo ao static
+            new_post.image_path = relative_image_path
         else:
             # ISSO É REALMENTE NECESSÁRIO?
             image_path = None # Garante que o image path seja None se o usuário não colocou nenhuma imagem
@@ -357,10 +381,18 @@ def notifications():
 
     return render_template("notifications.html")
 
+# Mostra um post
+@app.route("/post")
+def post():
+    post_id = request.args.get("id")
+    post = Post.query.get(post_id)
+
+    return render_template("post.html", post=post)
+
 # Mostra o usuário ou o perfil de algum outro usuário
 
 
-@app.route("/<username>", methods=["GET", "POST"])
+@app.route("/<username>")
 @login_required
 def user(username):
     result = User.query.filter_by(nome=username).first()
@@ -376,7 +408,8 @@ def user(username):
         "profile_pic": result.profile_pic,
         "bio": result.bio.replace("\n", "<br>"),
         "followers": result.followers,
-        "following": result.following
+        "following": result.following,
+        "posts": result.posts
     }
     if user["followers"] is not None:
         user["followers"] = len(user["followers"])
@@ -405,6 +438,7 @@ def user(username):
 
     return render_template("user.html", user=user)
 
+
 # Editar o perfil do usuário
 
 
@@ -421,77 +455,6 @@ def edit():
     }
     return render_template("edit.html", user=user)
 
-# CHECAGEM DE INFORMAÇÕES DE INPUTS
-
-# Checa a disponibilidade de um nome de usário
-
-
-@app.route("/checkname")
-def checkname():
-    username = request.args.get("name")
-    # Informações para o JS
-    result = {
-        "isValid": False,
-        "exists": False
-    }
-    # Checa se o nome foi digitado
-    if username is not None and username.strip():
-        username = username.lower().strip()  # Deixa o nome no formato padrão
-
-        # Checa se o nome é válido
-        if username.find(" ") <= 0 and len(username) >= 6:
-            result["isValid"] = True
-
-        if User.query.filter_by(nome=username).first():
-            result["exists"] = True
-        # Retorna para o javascript
-
-    return jsonify(result)
-
-# Checagem do email
-
-
-@app.route("/checkemail")
-def checkemail():
-    email = request.args.get("email")
-    # Informações para o JS
-    result = {
-        "isValid": False,
-        "exists": False,
-    }
-
-    if email is not None and email.strip():
-        email = email.strip()
-        # Checa se o email é válido
-        if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
-            result["isValid"] = True
-
-        if User.query.filter_by(email=email).first():
-            result["exists"] = True
-
-    # Retorna para o javascript
-    return jsonify(result)
-
-
-@app.route("/checkPassword")
-def checkPassword():
-    name_email = request.args.get("identifier")
-    senha = request.args.get("senha")
-
-    if name_email:
-        name_email = name_email.strip().lower()
-
-    # pega as informações do usuário por nome ou email
-    if re.match(EMAIL_PATTERN, name_email):
-        user = User.query.filter_by(email=name_email).first()
-    else:
-        user = User.query.filter_by(nome=name_email).first()
-
-    # Verifica a senha
-    if user and check_password_hash(user.senha_hash, senha):
-        return (jsonify(isRight=True))
-
-    return jsonify(isRight=False)
 
 
 ## EDIÇÕES ##
@@ -724,6 +687,79 @@ def logout():
     return redirect("/login")
 
 
+# CHECAGEM DE INFORMAÇÕES DE INPUTS
+
+# Checa a disponibilidade de um nome de usário
+
+
+@app.route("/checkname")
+def checkname():
+    username = request.args.get("name")
+    # Informações para o JS
+    result = {
+        "isValid": False,
+        "exists": False
+    }
+    # Checa se o nome foi digitado
+    if username is not None and username.strip():
+        username = username.lower().strip()  # Deixa o nome no formato padrão
+
+        # Checa se o nome é válido
+        if username.find(" ") <= 0 and len(username) >= 6:
+            result["isValid"] = True
+
+        if User.query.filter_by(nome=username).first():
+            result["exists"] = True
+        # Retorna para o javascript
+
+    return jsonify(result)
+
+# Checagem do email
+
+
+@app.route("/checkemail")
+def checkemail():
+    email = request.args.get("email")
+    # Informações para o JS
+    result = {
+        "isValid": False,
+        "exists": False,
+    }
+
+    if email is not None and email.strip():
+        email = email.strip()
+        # Checa se o email é válido
+        if email.find(" ") <= 0 and re.match(EMAIL_PATTERN, email):
+            result["isValid"] = True
+
+        if User.query.filter_by(email=email).first():
+            result["exists"] = True
+
+    # Retorna para o javascript
+    return jsonify(result)
+
+
+@app.route("/checkPassword")
+def checkPassword():
+    name_email = request.args.get("identifier")
+    senha = request.args.get("senha")
+
+    if name_email:
+        name_email = name_email.strip().lower()
+
+    # pega as informações do usuário por nome ou email
+    if re.match(EMAIL_PATTERN, name_email):
+        user = User.query.filter_by(email=name_email).first()
+    else:
+        user = User.query.filter_by(nome=name_email).first()
+
+    # Verifica a senha
+    if user and check_password_hash(user.senha_hash, senha):
+        return (jsonify(isRight=True))
+
+    return jsonify(isRight=False)
+
+
 @app.context_processor
 def inject_user():
     username = None
@@ -732,10 +768,8 @@ def inject_user():
     return dict(username=username)
 
 
-
 if __name__ == "__main__":
     # Criar as tabelas no banco de dados
     with app.app_context():
         db.create_all()
     socketio.run(app, host='0.0.0.0', port=5000)
-

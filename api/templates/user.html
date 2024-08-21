@@ -5,64 +5,80 @@
 {% endblock %}
 
 {% block body %}
-<main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start py-5 px-5 md:px-16 flex flex-col pb-14 ">
-    <header class="border-b border-gray-400 pb-10">
-        <div class="flex">
-            <div class="mr-5 sm:mx-10">
-                <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-20 md:w-40 rounded-full">
-            </div>
-            <div>
-                <h2 class="text-lg font-semibold">@{{ user["name"] }}</h2>
-                    <div class="flex flex-wrap items-center text-center font-semibold mt-2 text-sm sm:text-base">
-                        <a href="/{{ user['name'] }}/followers" class="text-center mr-10 grid sm:flex items-center">
-                            <span class="self-center sm:mr-2">{{ user["followers"] }} </span>
-                            Seguidores
-                        </a>
-                        <a href="/{{ user['name'] }}/following" class="text-center grid sm:flex items-center">
-                            <span class="self-center sm:mr-2">{{ user["following"] }} </span>
-                            Seguindo
-                        </a>
+    <main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start flex flex-col p-5">
+        <header class="border-b border-gray-400 pb-6">
+            <div class="flex mt-3 pl-3 sm:pl-10">
+                <div class="mr-8 w-[140px]">
+                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-full rounded-full">
+                </div>
+                <div class="mt-5">
+                    <div class="flex items-center flex-wrap">
+                        <h2 class="text-[18px] font-semibold mr-5">@{{ user["name"] }}</h2>
+                        <div class="flex text-[14px] md:text-[16px]">
+                            <a href="/{{ user['name'] }}/followers" class="text-center mr-5 flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["followers"]}}</span> 
+                                seguidores
+                            </a>
+                            <a href="/{{ user['name'] }}/following" class="text-center flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["following"]}} </span> 
+                                seguindo
+                            </a>
+                        </div>
                     </div>
-                    <div class="hidden sm:block w-full my-7">
-                        <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
-                    </div>
+                        <div class="relative z-10 block max-w-[%] my-3 text-[15px] text-justify">
+                            <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
+                        </div>
+                </div>
             </div>
+
             
+            <div class="mt-5 flex sm:px-3">
+                {% if user["followed"] %}
+                    <a href="/chat" class="flex justify-center items-center text-black text-center font-semibold p-2 rounded-md w-full sm:w-1/2 mx-2 bg-gray-300 hover:bg-gray-400">
+                        Conversar
+                        <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 50 50">
+                            <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5">
+                              <path stroke="black" d="M14.583 41.667h-6.25a2.083 2.083 0 0 1-2.083-2.084V16.667" />
+                              <path stroke="black" d="M41.667 8.333h-25a2.083 2.083 0 0 0-2.084 2.084V31.25a2.083 2.083 0 0 0 2.084 2.083h6.25v6.25l10.416-6.25h8.334a2.083 2.083 0 0 0 2.083-2.083V10.417a2.083 2.083 0 0 0-2.083-2.084" />
+                            </g>
+                          </svg>
+                    </a>
+                    <form action="/unfollow" method="get" class="w-full sm:w-1/2 mx-2">
+                        <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                        <button class="flex justify-center items-center text-black text-center font-semibold p-2 rounded-md w-full bg-gray-300 hover:bg-gray-400" id="followbtn">
+                            Seguindo
+                            <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="1.3em" height="1.3em" viewBox="0 0 24 24">
+                                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12.359 14.724c-3.6 0-7.62 2.928-7.62 6.526m7.62-9.785a4.36 4.36 0 0 0 4.035-2.683a4.355 4.355 0 0 0-3.171-5.948a4.362 4.362 0 0 0-5.215 4.274a4.356 4.356 0 0 0 4.35 4.357m.904 6.897l1.688 1.689a.637.637 0 0 0 .909 0l3.403-3.403"/>
+                            </svg>
+                        </button>
+                    </form>
+                {% elif user["follows_me"] %}
+                    <form action="/follow" method="get" class="w-full">
+                        <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                        <button class="flex items-center justify-center text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
+                            Seguir de volta
+                            <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="1.3em" height="1.3em" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"><path stroke-linejoin="round" d="M12.125 14.719c-3.6 0-7.62 2.928-7.62 6.526m7.62-9.785a4.36 4.36 0 0 0 4.035-2.683a4.355 4.355 0 0 0-3.17-5.948a4.362 4.362 0 0 0-5.215 4.274a4.356 4.356 0 0 0 4.35 4.357"/>
+                                    <path stroke-miterlimit="10" d="M16.488 14.983v5.997m-2.993-2.992h6"/>
+                                </g>
+                            </svg>
+                        </button>
+                    </form>
+                {% else %}
+                    <form action="/follow" method="get" class="w-full">
+                        <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
+                        <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
+                            Seguir
+                        </button>
+                    </form>
+                {% endif %}
         </div>
-        <div class="block sm:hidden w-full my-7">
-            <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
-        </div>
-        <div class="mt-5 flex flex-nowrap w-full">
-            {% if user["followed"] %}
-                <a href="/chat" class="text-black text-center font-semibold p-2 rounded-md w-full sm:w-1/2 mx-2 bg-gray-300 hover:bg-gray-400">
-                    Conversar
-                </a>
-                <form action="/unfollow" method="get" class="w-full sm:w-1/2 mx-2">
-                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
-                    <button class="text-black text-center font-semibold p-2 rounded-md w-full bg-gray-300 hover:bg-gray-400" id="followbtn">
-                        Seguindo
-                    </button>
-                </form>
-            {% elif user["follows_me"] %}
-                <form action="/follow" method="get" class="w-full">
-                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
-                    <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
-                        Seguir de volta
-                    </button>
-                </form>
-            {% else %}
-                <form action="/follow" method="get" class="w-full">
-                    <input type="hidden" name="user" value="{{ user['id'] }}" id="user_id">
-                    <button class="text-white text-center font-semibold p-2 rounded-md w-full bg-purple-700 hover:bg-purple-800" id="followbtn">
-                        Seguir
-                    </button>
-                </form>
-            {% endif %}
-        </div>
-    </header>
-    <section class="flex justify-center items-center h-full">
-        <span>
-            Sem publicações ainda
-        </span>
-    </section>
+            </div>
+        </header>
+        <section class="flex justify-center items-center h-full">
+            <span>
+                Sem publicações ainda
+            </span>
+        </section>
+    </main>
 {% endblock %}
