@@ -75,10 +75,28 @@
         </div>
             </div>
         </header>
-        <section class="flex justify-center items-center h-full">
+        {% if user.posts %}
+        <section class="grid grid-cols-[repeat(auto-fill,_minmax(170px,_1fr))] gap-1 justify-center p-2">
+            {% for post in user.posts %}
+                {% if post['image_path'] %}
+                    <a class="card flex justify-center" href="/post?id={{ post['id'] }}">
+                        <img src="{{ url_for('static', filename=post.image_path) }}" style="object-fit: cover; object-position: center;" width="100%" height="100%">
+                    </a>
+                {% else %}
+                    <a class="card" href="/post?id={{ post['id'] }}">
+                        <p class="max-w-[100%] font-semibold post-text" style="word-wrap: break-word; overflow-wrap: break-word;">
+                            {{ post['content'] }}
+                        </p>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </section>
+        {% else %}
+        <section class="flex justify-center items-center w-full h-full">
             <span>
                 Sem publicações ainda
             </span>
         </section>
+        {% endif %}
     </main>
 {% endblock %}

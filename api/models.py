@@ -49,6 +49,7 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     content = db.Column(db.String(1500))
     image_path = db.Column(db.Text)
     likes = db.relationship('User', secondary='likes', backref='liked_posts')

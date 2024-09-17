@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 from flask_session import Session
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
-from helpers import allowed_file, error, login_required, delete_chat_for_user, get_messages_for_chat
+from helpers import error, login_required, delete_chat_for_user, get_messages_for_chat
 from models import db, User, Message, Notification, Comment, Post, Chat, Follower, Like
 from PIL import Image, ExifTags
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -30,6 +30,8 @@ migrate = Migrate(app, db)
 
 # Expressão regular para verificar o formato do email
 EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+is_development = os.environ.get('FLASK_ENV') == 'development'
 
 # Conecta o usuário
 @socketio.on("connect")
@@ -66,65 +68,65 @@ def add():
     # Método POST se responsabiliza por adicionar o novo POST ao banco de dados
     if request.method == "POST":
         text = request.values.get("text")
-        if not text or len(text.strip()) == 0:
-            text = None # Garante que text seja None se o usuário não digitar nada
-
-        # Cria o novo post
-        new_post = Post(
-            user_id = session.get("user_id"),
-            content = text,
-        )
-        db.session.add(new_post)
-        db.session.commit()
-        
         image = request.files['image']
-        if image:
-            if not allowed_file(image.filename):
-                return error("O tipo de imagem não é suportado", 500)
-            
-            image_name = secure_filename(image.filename) # Nome da imagem
-            ext = image_name.rsplit('.', 1)[1].lower() # Extrai a extensão da imagem
-            new_image_name = f"{new_post.id}.{ext}" # Renomeia a imagem com o id do post
+        if text or image:
+            if not text or len(text.strip()) == 0:
+                text = None # Garante que text seja None se o usuário não digitar nada
 
-            # Abre a imagem
-            img = Image.open(image)
+            # Cria o novo post
+            new_post = Post(
+                user_id = session.get("user_id"),
+                content = text,
+            )
+            db.session.add(new_post)
+            db.session.commit()
+        
+            if image:
+                image_name = secure_filename(image.filename) # Nome da imagem
+                ext = image_name.rsplit('.', 1)[1].lower() # Extrai a extensão da imagem
+                new_image_name = f"{new_post.id}.{ext}" # Renomeia a imagem com o id do post
 
-            # Corrige a orientação da imagem se houver informações EXIF
-            try:
-                for orientation in ExifTags.TAGS.keys(): # Percorre as chaves dos metadados EXIF para encontrar a orientação
-                    if ExifTags.TAGS[orientation] == 'Orientation': # Identifica o código da orientação
-                        break # Interrompe o loop quando encontra a chave da orientação
+                # Abre a imagem
+                img = Image.open(image)
 
-                exif = img._getexif() # Obtém os metadados EXIF da imagem
-                if exif is not None: # Verifica se a imagem possui metadados EXIF
-                    orientation = exif.get(orientation, None) # Obtém o valor da orientação, se disponível
+                # Corrige a orientação da imagem se houver informações EXIF
+                try:
+                    for orientation in ExifTags.TAGS.keys(): # Percorre as chaves dos metadados EXIF para encontrar a orientação
+                        if ExifTags.TAGS[orientation] == 'Orientation': # Identifica o código da orientação
+                            break # Interrompe o loop quando encontra a chave da orientação
 
-                    if orientation == 3:
-                        img = img.rotate(180, expand=True)  # Rotaciona a imagem em 180 graus
-                    elif orientation == 6:
-                        img = img.rotate(270, expand=True)  # Rotaciona a imagem em 270 graus (90 graus no sentido horário)
-                    elif orientation == 8:
-                        img = img.rotate(90, expand=True)  # Rotaciona a imagem em 90 graus (90 graus no sentido anti-horário)
-            except (AttributeError, KeyError, IndexError):  # Captura possíveis erros ao acessar os metadados EXIF
-                # Se houver um erro ou a imagem não possuir EXIF, ignora a correção de orientação
-                pass
-            
-            # Salvar a imagem na página dos posts
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_image_name)
-            img.save(image_path, quality=90)
-            # Adiciona a imagem ao post
-            relative_image_path = f"images/posts/{new_image_name}" # Salvando apenas o caminho relativo ao static
-            new_post.image_path = relative_image_path
-        else:
-            # ISSO É REALMENTE NECESSÁRIO?
-            image_path = None # Garante que o image path seja None se o usuário não colocou nenhuma imagem
+                    exif = img._getexif() # Obtém os metadados EXIF da imagem
+                    if exif is not None: # Verifica se a imagem possui metadados EXIF
+                        orientation = exif.get(orientation, None) # Obtém o valor da orientação, se disponível
 
-        db.session.commit()
-        return redirect(url_for('index'))
-    
+                        if orientation == 3:
+                            img = img.rotate(180, expand=True)  # Rotaciona a imagem em 180 graus
+                        elif orientation == 6:
+                           img = img.rotate(270, expand=True)  # Rotaciona a imagem em 270 graus (90 graus no sentido horário)
+                        elif orientation == 8:
+                            img = img.rotate(90, expand=True)  # Rotaciona a imagem em 90 graus (90 graus no sentido anti-horário)
+                except (AttributeError, KeyError, IndexError):  # Captura possíveis erros ao acessar os metadados EXIF
+                    # Se houver um erro ou a imagem não possuir EXIF, ignora a correção de orientação
+                    pass
+                
+                # Salvar a imagem na página dos posts
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_image_name)
+                img.save(image_path, quality=90)
+                # Adiciona a imagem ao post
+                relative_image_path = f"images/posts/{new_image_name}" # Salvando apenas o caminho relativo ao static
+                new_post.image_path = relative_image_path
+            else:
+                # ISSO É REALMENTE NECESSÁRIO?
+                image_path = None # Garante que o image path seja None se o usuário não colocou nenhuma imagem
+            print("Chegou aqui")
+            db.session.commit()
+            return redirect(f"/{session.get("name")}")
+        else: 
+            return error("Nenhuma imagem ou texto adicionados", 400)
+        
     # Carrega a página para adicionar um novo post
     if "user_id" in session:
-        user = User.query.get(session.get("user_id"))
+        user = db.session.get(User, session.get("user_id"))
         profile_pic = user.profile_pic
     return render_template("add.html", profile_pic=profile_pic)
     
@@ -213,8 +215,12 @@ def chat_messages(chat_id):
             "sender_id":message.sender_id, 
             "message_id":message.id, 
             "parent_content": parent_content,
-            "parent_id": message.parent_id
+            "parent_id": message.parent_id,
+            "received": False
         }
+        if message.sender_id == session.get("user_id"):
+            message.received = True
+
         if message.view:
             # Organiza as mensagens não lidas
             messages.append(message_data)
@@ -346,7 +352,7 @@ def search():
     return render_template("search.html")
 
 
-@app.route("/getUsers")
+@app.route("/search_users")
 def getUser():
     query = request.args.get("query")
 
@@ -398,6 +404,12 @@ def user(username):
     result = User.query.filter_by(nome=username).first()
     if result is None:
         return error("Página não encontrada", 404)
+    
+    if result.posts:
+        result.posts = sorted(result.posts, key=lambda post: post.created_at, reverse=True)
+        for post in result.posts:
+            post.like_count = Like.query.filter_by(post_id=post.id).count()
+            print(f"Post ID: {post.id}, Likes: {post.like_count}")
     # Organiza o json para o javascript
     user = {
         "id": result.id,

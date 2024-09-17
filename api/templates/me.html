@@ -4,9 +4,13 @@
     {{ user["name"] }}
 {% endblock %}
 
+{% block script %}
+<script src="../static/js/post.js" defer></script>
+{% endblock%}
+
 {% block body %}
-    <main class="bg-white w-full md:w-3/4 h-screen-dynamic text-start flex flex-col p-5">
-        <header class="border-b border-gray-400 pb-6">
+    <main class="bg-white w-full md:w-3/4 text-start flex flex-col p-2 min-h-[100dvh] h-fit overflow-y: auto">
+        <header class=" pb-6">
             <div class="flex mt-3 pl-3 sm:pl-10">
                 <div class="mr-8 w-[140px]">
                     <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-full rounded-full">
@@ -25,7 +29,7 @@
                             </a>
                         </div>
                     </div>
-                        <div class="relative z-10 block max-w-[%] my-3 text-[15px] text-justify">
+                        <div class="block max-w-[%] my-3 text-[15px] text-justify">
                             <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
                         </div>
                 </div>
@@ -43,20 +47,72 @@
                 </a>
             </div>
         </header>
-        <section class="flex justify-center items-center h-full">
-            {% if user.posts %}
-                {% for post in user.posts %}   
-                    {% if post['image_path'] %}
-                        <a href="/post?id={{ post['id'] }}">
-                            <img src="{{ url_for('static', filename=post.image_path) }}" width="200px">
-                        </a>
-                    {% endif %}
-                {% endfor %}
-            {% else %}
-                <span>
-                    Sem publicações ainda
+        {% if user.posts %}
+        <section class="pb-12">
+            {% for post in user.posts %}
+            <div id="{{ post['id'] }}" class="p-3 py-3 border-t border-gray-400">
+                <div class="flex justify-start items-center font-semibold p-1">
+                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-10 rounded-full mr-2" alt="">
+                    <span>@{{ user['name'] }}</span>
+                </div>
+                {% if post['image_path'] %}
+                <div class="min-w-[50%] w-fit h-[350px] relative flex justify-center ">
+                    <img src="{{ url_for('static', filename=post.image_path) }}" class="rounded-lg" style="object-fit: cover; object-position: center; width: 100%; max-height: 100%;">
+                    <button class="absolute bottom-3 right-3 text-white cursor-pointer hover:text-gray-200" onclick="fullScreen(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 24 24">
+                            <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2m10 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+                            <rect width="10" height="8" x="7" y="8" rx="1"/></g>
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex my-2">
+                    <button class="text-black mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" >
+                            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                        </svg>
+                    </button>
+                    <a href="/comments?post_id={{ post.id }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 16 16">
+                            <path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.75.75 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+                        </svg>
+                    </a>
+                </div>
+                <span class="font-semibold">
+                    {{ post.like_count }} curtidas
                 </span>
-            {% endif %}
+                <p class="max-w-[100%]" style="word-wrap: break-word; overflow-wrap: break-word;">
+                    {{ post['content'] }}
+                </p>
+                {% else %}
+                    <p class="max-w-[100%] font-semibold post-text" style="word-wrap: break-word; overflow-wrap: break-word;">
+                        {{ post['content'] }}
+                    </p>
+                    <div class="flex my-2">
+                        <button class="text-black mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" >
+                                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                            </svg>
+                        </button>
+                        <a href="/comments?post_id={{ post.id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 16 16">
+                                <path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.75.75 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+                            </svg>
+                        </a>
+                    </div>
+                    <span class="font-semibold">
+                        {{ post.like_count }} curtidas
+                    </span>
+                {% endif %}
+            </div>
+            {% endfor %}
         </section>
+        {% else %}
+        <section class="flex justify-center items-center w-full h-full border-t border-gray-400 p-3">
+            <span>
+                Sem publicações ainda
+            </span>
+        </section>
+        {% endif %}
     </main>
 {% endblock %}

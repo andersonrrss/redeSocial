@@ -1,7 +1,6 @@
 from flask import render_template, redirect, session
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 from models import db, Chat, Message
 
 # Arquivos permitidos nos posts
@@ -10,7 +9,6 @@ def allowed_file(filename):
 
 # Erro
 def error(message, code=400):
-
     return render_template("error.html", code=code, message=message), code
 
 # Verifica se o usuário fez login

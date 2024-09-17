@@ -4,7 +4,7 @@ Adicionar
 {% endblock %}
 
 {% block script %}
-<script src="../static/js/add.js" defer></script>
+<script type="module" src="../static/js/add.js" defer></script>
 <script>
     document.addEventListener("DOMContentLoaded", function(){
       const widowHeight = window.innerHeight
@@ -25,7 +25,7 @@ Adicionar
         <h1 class="text-center m-2 text-xl sm:text-2xl font-semibold text-purple-800">Nova publicação</h1>
         <div class="flex-1"></div>
     </header>
-    <form action="/add" class="flex flex-col h-full items-center justify-center w-full" method="post" enctype="multipart/form-data">
+    <form id="postForm" action="/add" method="post" class="flex flex-col h-full items-center justify-center w-full" enctype="multipart/form-data">
         <div class="flex flex-col md:flex-row w-full m-2 mb-0 md:h-[60%] h-[90%]">
             <label for="imageUpload" class="relative flex justify-center items-center cursor-pointer bg-gray-200 rounded-md h-[55%] md:h-full w-full m-1" style="border: 3px dashed #a8a8a8;">
                 

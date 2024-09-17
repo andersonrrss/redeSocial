@@ -12,7 +12,6 @@
   body {
   display: flex;
   justify-content: center;
-  align-items: center;
   font: normal 14px;
   @apply bg-white sm:bg-[#eeeeee]
   }
@@ -134,5 +133,23 @@
   max-height: 100%;
   display: block;
   object-fit: contain;
+}
+
+.card {
+  @apply bg-gray-300 p-1 w-full transition-all duration-200;
+  padding: 3px;
+  height: 170px;
+}
+.card:hover{
+  scale: 1.03;
+}
+.card p{
+  padding: 5px;
+  font: normal arial 10px;
+  display: -webkit-box;          /* Necessário para aplicar o truncamento em múltiplas linhas */
+  -webkit-line-clamp: 6;         /* Define o número máximo de linhas a serem exibidas */
+  -webkit-box-orient: vertical;  /* Necessário para truncar o texto corretamente */
+  overflow: hidden;              /* Esconde o texto que ultrapassar o limite */
+  text-overflow: ellipsis;
 }
 }

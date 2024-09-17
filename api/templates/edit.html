@@ -3,80 +3,11 @@ block script %}
 <script src="../static/js/edit.js" defer></script>
 {% endblock %} {% block body %}
 <section class="h-full w-full flex">
-  <nav class="flex flex-col justify-between bg-gray-100 w-1/5 left-0 h-screen pb-14 md:pb-0 py-16 md:py-2">
-    <div class="flex flex-col">
-      <a href="/{{ username }}" class="p-3">
-        <button><i class="fa-solid fa-arrow-left"></i></button>
-      </a>
-      <button class="p-3 text-start hover:bg-gray-200 selected">Perfil</button>
-      <button class="p-3 text-start hover:bg-gray-200">
-        Informações Pessoais
-      </button>
-      <button class="p-3 text-start hover:bg-gray-200">Senha</button>
-    </div>
-    <a
+  <a
       href="/logout"
       class="flex m-2 justify-center items-center w-9/10 h-10 rounded-md text-white bg-purple-600 hover:bg-purple-700"
     >
       Sair <i class="fa-solid fa-arrow-right-from-bracket ml-2"></i>
     </a>
-  </nav>
-  <main class="m-24">
-    <div class="w-1/6 cursor-pointer relative" id="profile_pic_div">
-      <img
-        src="{{ url_for('static', filename=user['profile_pic']) }}"
-        alt="Foto de usuário"
-        class="w-full transition-all"
-        id="profile_pic"
-      />
-      <i
-        class="text-lg text-white fa-solid fa-pencil absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        id="pencil_icon"
-        style="visibility: hidden"
-      ></i>
-    </div>
-    <div class="pt-5">
-      <span>Nome de usuário: </span><br />
-      <div class="flex">
-        <form action="/updatename" id="nameForm">
-          <input
-            type="text"
-            name="name"
-            value="{{ user['name'] }}"
-            placeholder="Edite seu nome de usuário"
-            disabled
-            id="username"
-            class="p-1 outline-none border border-gray-400 bg-white w-52"
-          /><br />
-        </form>
-        <button id="edit_name" class="btn ml-3 rounded-md px-3">Editar</button>
-      </div>
-
-      <span id="message" class="text-red-600 text-sm" style="visibility: hidden"
-        >Nome de usuário inválido ou existente</span
-      ><br />
-    </div>
-    <div>
-      <span>Biografia:</span>
-      <div class="w-2/3">
-        <form action="/update_bio" id="bio_form">
-          <textarea
-            name="bio"
-            disabled
-            id="bio"
-            class="w-full h-40 bg-white rounded-sm p-1 outline-none"
-            style="resize: none; text-align: left; vertical-align: top"
-            maxlength="150"
-          >
-{{ user['bio'] }}</textarea
-          >
-        </form>
-        <div class="flex">
-          <button id="editbio" class="btn my-3 p-2">Editar</button>
-          <span id="count" class="w-full text-sm text-end"></span>
-        </div>
-      </div>
-    </div>
-  </main>
 </section>
 {% endblock %}
