@@ -4,11 +4,10 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 
 ## Update
 
-`ver - 26.07.2024`
+`ver -1.1.0`
 
 ## A fazer:
 - Terminar implementação dos posts
-- Traduzir JS -> TS
 - Excluir mensagens
 - Refazer campo de envio de mensagens para que obedeça a formatação que o usuário desejar
 

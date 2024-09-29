@@ -143,13 +143,23 @@
 .card:hover{
   scale: 1.03;
 }
-.card p{
+.post-text p{
   padding: 5px;
   font: normal arial 10px;
   display: -webkit-box;          /* Necessário para aplicar o truncamento em múltiplas linhas */
-  -webkit-line-clamp: 6;         /* Define o número máximo de linhas a serem exibidas */
+  -webkit-line-clamp: 5;         /* Define o número máximo de linhas a serem exibidas */
   -webkit-box-orient: vertical;  /* Necessário para truncar o texto corretamente */
   overflow: hidden;              /* Esconde o texto que ultrapassar o limite */
   text-overflow: ellipsis;
+}
+.readMoreBtn {
+  outline: none;
+  border: none;
+  cursor: pointer;
+  color: #7e22ce;
+}
+.readMoreBtn:hover{
+  color: #6b21a8;
+  text-decoration: underline;
 }
 }

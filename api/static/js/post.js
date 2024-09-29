@@ -3,6 +3,7 @@
 let container = null;
 let img = null;
 let exitBtn = null;
+// Função do evento de clique adicionado via html
 function fullScreen(btn) {
     btn = btn;
     const image = btn.parentElement.querySelector("img");
@@ -58,3 +59,66 @@ function fullScreen(btn) {
         }
     });
 }
+// Ver mais e Ver menos
+const postsTexts = document.querySelectorAll('.imagePostContent'); // Seleciona todos os elementos de texto das postagens
+const readMoreBtns = document.querySelectorAll('.readMoreBtn'); // Seleciona todos os botões de "Ler Mais"
+if (postsTexts.length > 0) { // Verifica se existem postagens
+    postsTexts.forEach((text, index) => {
+        const lineHeight = parseInt(window.getComputedStyle(text).lineHeight); // Obtém a altura da linha do texto
+        const maxHeight = lineHeight * 5; // Define a altura máxima para 5 linhas
+        if (text.scrollHeight > maxHeight) { // Se a altura do conteúdo for maior que 5 linhas
+            if (readMoreBtns[index]) { // Verifica se o botão "Ler Mais" existe
+                const btn = readMoreBtns[index]; // Obtém o botão correspondente
+                btn.classList.remove('hidden'); // Remove a classe "hidden" para exibir o botão
+                btn.addEventListener("click", function () {
+                    const postContent = postsTexts[index]; // Obtém o conteúdo da postagem
+                    const isExpanded = postContent.style.webkitLineClamp === 'unset'; // Verifica se o texto está expandido
+                    if (isExpanded) { // Se o conteúdo estiver expandido
+                        postContent.style.webkitLineClamp = '5'; // Limita o texto a 5 linhas
+                        postContent.style.overflow = 'hidden'; // Oculta o conteúdo excedente
+                        btn.textContent = 'Ler Mais'; // Altera o texto do botão para "Ler Mais"
+                    }
+                    else { // Se o conteúdo estiver colapsado
+                        postContent.style.webkitLineClamp = 'unset'; // Remove o limite de linhas
+                        postContent.style.overflow = 'visible'; // Exibe o conteúdo completo
+                        btn.textContent = 'Ver menos'; // Altera o texto do botão para "Ver Menos"
+                    }
+                });
+            }
+        }
+    });
+}
+document.querySelectorAll('.like-button').forEach(button => {
+    console.log("evento adiconado");
+    button.addEventListener('click', () => {
+        console.log("click");
+        const postId = button.getAttribute('post-id');
+        try {
+            fetch(`/like?post_id=${postId}`)
+                .then(response => response.json())
+                .then((data) => {
+                const post = document.querySelector(`#id_${data.postId}`);
+                const likeCounter = post.querySelector(".like-counter");
+                likeCounter.innerText = `${data.likeCount} curtidas`;
+                const likeButton = button;
+                if (data.action == "like") {
+                    likeButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48">
+                        <path fill="#ff3838" stroke="#ff3838" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                    </svg>
+                `;
+                }
+                else {
+                    likeButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" >
+                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                    </svg>
+                    `;
+                }
+            });
+        }
+        catch (_a) {
+            alert("Algo deu errado");
+        }
+    });
+});

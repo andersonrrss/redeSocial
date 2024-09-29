@@ -5,7 +5,7 @@ from models import db, Chat, Message
 
 # Arquivos permitidos nos posts
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif',}
 
 # Erro
 def error(message, code=400):
