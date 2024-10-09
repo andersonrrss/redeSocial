@@ -9,7 +9,7 @@ instance
 flask_session
 
 # TypeScript output
-js
+api/static/js/
 *.js
 *.js.map
 
@@ -34,4 +34,4 @@ coverage/
 posts
 
 # TailwindCSS output
-output.css
+api/static/css/output.css
