@@ -1,0 +1,37 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask specific
+instance
+.webassets-cache
+flask_session
+
+# TypeScript output
+js
+*.js
+*.js.map
+
+!tailwind.config.js
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+env/
+.env
+
+# Logs
+logs/
+*.log
+
+# Coverage and test results
+coverage/
+*.lcov
+
+# Images_posts
+posts
+
+# TailwindCSS output
+output.css

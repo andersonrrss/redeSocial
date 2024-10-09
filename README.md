@@ -1,11 +1,6 @@
 # Rede Social(Nexar)
 
 Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pessoas, postar publicações e conversar.
-
-## Update
-
-`ver -1.1.0`
-
 ## A fazer:
 - Terminar implementação dos posts
 - Excluir mensagens
