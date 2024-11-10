@@ -3,8 +3,9 @@
 Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pessoas, postar publicações e conversar.
 ## Como rodar?
 1. Compile os arquivos de TS para JS, usando o comando ```tsc``` dentro da pasta raiz do projeto
-2. Faça o download das bibliotecas pelo `requirements.txt` usando o comando ```pip install -r requirements.txt```
-3. Rode o ```app.py``` dentro da pasta `api` por exemplo, usando o comando ```python api/app.py ``` na raiz do projeto
+2. Compile o css do tailwind com o comando `npx tailwindcss -i static/css/src/input.css -o static/css/output.css` dentro da pasta `api` 
+3. Faça o download das bibliotecas pelo `requirements.txt` usando o comando ```pip install -r requirements.txt```
+4. Rode o ```app.py``` dentro da pasta `api` por exemplo, usando o comando ```python api/app.py ``` na raiz do projeto
 
 ## A fazer:
 - Implementar os comentários
