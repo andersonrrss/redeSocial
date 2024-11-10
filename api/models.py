@@ -6,7 +6,7 @@ db = SQLAlchemy()
 class Follower(db.Model):
     __tablename__ = 'followers'
     __table_args__ = {'extend_existing': True}
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 
 class Like(db.Model):
@@ -25,13 +25,14 @@ class User(db.Model):
     profile_pic = db.Column(db.Text, nullable=False, default='/images/profile_pics/default.jpg')
     bio = db.Column(db.String(150), default='Olá! Tudo bem?')
     creation = db.Column(db.TIMESTAMP, default=datetime.utcnow)
+    password_token = db.Column(db.String(32), nullable=False, unique=True)
     
     posts = db.relationship('Post', backref='user', lazy=True)
 
     followers = db.relationship(
         'User', secondary='followers',
         primaryjoin=(id == Follower.follower_id),
-        secondaryjoin=(id == Follower.user_id),
+        secondaryjoin=(id == Follower.followed_id),
         backref='following'
     )
 
@@ -52,7 +53,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     content = db.Column(db.String(1500))
     image_path = db.Column(db.Text)
-    likes = db.relationship('User', secondary='likes', backref='liked_posts')
+    likes = db.relationship('Like', backref='post', lazy='dynamic')
 
 class Comment(db.Model):
     __tablename__ = "comments"
@@ -87,7 +88,7 @@ class Notification(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Criar índices
-db.Index('idx_follower_user_id', Follower.user_id)
+db.Index('idx_follower_user_id', Follower.followed_id)
 db.Index('idx_follower_follower_id', Follower.follower_id)
 
 db.Index('idx_like_user_id', Like.user_id)

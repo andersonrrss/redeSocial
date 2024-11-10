@@ -3,8 +3,12 @@ api/__pycache__/
 *.py[cod]
 *$py.class
 
+# Migração do banco de dados
+migrations/
+
 # Flask specific
 instance
+api/instance
 .webassets-cache
 flask_session
 
@@ -30,7 +34,7 @@ logs/
 coverage/
 *.lcov
 
-# Images_posts
+# Images posts
 posts
 
 # TailwindCSS output

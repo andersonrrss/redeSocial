@@ -1,5 +1,25 @@
-{% extends "layout.html" %} {% block body %}
+{% extends "layout.html" %}
+{% from 'macros.html' import render_post %}
 
-<main>FOI</main>
+{% block script %}
+<script type="module" src="../static/js/post.js" defer></script>
+{% endblock %}
+{% block body %}
+
+<main class="bg-white w-full md:w-3/4 text-start flex flex-col p-2 min-h-[100dvh] h-fit overflow-y: auto">
+    {% if posts %}
+    <section class="pb-12">
+        {% for post in posts %}
+            {{ render_post(post)}}       
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="flex justify-center items-center w-full h-[90dvh] border-gray-400 p-3">
+        <span>
+            Seus amigos não fizeram nenhum post novo..
+        </span>
+    </section>
+    {% endif %}
+</main>
 
 {% endblock %}

@@ -1,5 +1,7 @@
 import os
 import re
+import string
+import secrets
 
 from flask import Flask, render_template, jsonify, redirect, request, session, url_for
 from flask_migrate import Migrate
@@ -9,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from helpers import allowed_file, error, login_required, delete_chat_for_user, get_messages_for_chat
 from models import db, User, Message, Notification, Comment, Post, Chat, Follower, Like
 from PIL import Image, ExifTags
+from sqlalchemy import desc
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -24,7 +27,7 @@ db.init_app(app)
 Session(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Inicialize Flask-Migrate
+# Inicializa a migração 
 migrate = Migrate(app, db)
 
 
@@ -62,7 +65,7 @@ def index():
     user = User.query.filter_by(id=session.get("user_id")).first()
 
     # Subquery para encontrar os IDs dos perfis que o usuário segue
-    seguindo_ids = db.session.query(Follower.user_id).filter_by(follower_id=user.id).subquery()
+    seguindo_ids = db.session.query(Follower.followed_id).filter_by(follower_id=user.id).subquery()
 
     liked_posts = db.session.query(Like.post_id).filter_by(user_id=user.id).subquery()
 
@@ -71,15 +74,13 @@ def index():
         Post.user_id.in_(seguindo_ids)  # Posts dos perfis seguidos
     ).filter(
         Post.id.notin_(liked_posts)  # Exclui posts já curtidos pelo usuário
-    ).all()
+    ).order_by(desc(Post.created_at)).limit(50).all()
 
-    # Exibe os posts que não foram curtidos
     for post in posts_nao_curtidos:
-        print(f"Post {post.id} do usuário {post.user_id} não foi curtido pelo usuário {user.id}.")
+        post.like_count = post.likes.count()
+        post.content = post.content.replace("\n", "<br>")
 
-
-
-    return render_template("index.html")
+    return render_template("index.html", posts=posts_nao_curtidos)
 
 # Adicionar uma nova publicação
 @app.route("/add", methods=["POST", "GET"])
@@ -189,7 +190,7 @@ def chat():
                     },
                 })
         # Pega seguidores do usuário para usar como sugestão e formata em uma lista
-        following_ids = [follower.follower_id for follower in Follower.query.filter_by(user_id=user_id).limit(15).all()]
+        following_ids = [follower.follower_id for follower in Follower.query.filter_by(followed_id=user_id).limit(15).all()]
         if following_ids:
             following_ids = [fid for fid in following_ids if fid not in chat_user_ids] # Exclui IDs dos usuários que já possuem um chat com o usuário atual
             result = User.query.filter(User.id.in_(following_ids)).all() # Solicita as informações necessárias dos usuários
@@ -280,6 +281,13 @@ def delete_chat():
         return redirect("/chat")
     else:
         return error("Algo deu errado", 500)
+    
+@app.route("/comments")
+@login_required
+def comments():
+    post_id = request.args.get("post_id")
+    comments = None
+    return render_template("comments.html", comments=comments)
 
 
 @app.route("/sendmessage")
@@ -436,9 +444,8 @@ def user(username):
         result.posts = sorted(result.posts, key=lambda post: post.created_at, reverse=True)
         for post in result.posts:
             post.content = post.content.replace("\n", "<br>")
-            post.like_count = Like.query.filter_by(post_id=post.id).count()
-            print(f"contagem de likes do post {post.id} é de {post.like_count}")
-            like = Like.query.filter(Like.post_id==post.id, Like.user_id==session.get("user_id")).first()
+            post.like_count = post.likes.count() 
+            like = Like.query.filter(Like.user_id == session.get("user_id"), Like.post_id == post.id).first()
             if like is not None:
                 post.liked = True
             else:
@@ -455,7 +462,8 @@ def user(username):
         "bio": result.bio.replace("\n", "<br>"),
         "followers": result.followers,
         "following": result.following,
-        "posts": result.posts
+        "posts": result.posts,
+        "its_me": result.id == session.get("user_id")
     }
     if user["followers"] is not None:
         user["followers"] = len(user["followers"])
@@ -467,20 +475,16 @@ def user(username):
     else:
         user["following"] = 0
 
-    if user["id"] == session.get("user_id"):
-        return render_template("me.html", user=user)
-    
-
     profile_id = user["id"]
     user_id = session.get("user_id") # ID do usuário(eu) 
 
-    # Checa se existe uma lista de seguidores
-    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
-        user["followed"] = True
-    # Checa se existe uma lista de seguidos
-    if Follower.query.filter_by(user_id=profile_id, follower_id=user_id).first():
-        user["follows_me"] = True
-
+    if(not user["its_me"]):
+        # Checa se existe uma lista de seguidores
+        if Follower.query.filter_by(followed_id=user_id, follower_id=profile_id).first():
+            user["followed"] = True
+        # Checa se existe uma lista de seguidos
+        if Follower.query.filter_by(followed_id=profile_id, follower_id=user_id).first():
+            user["follows_me"] = True
 
     return render_template("user.html", user=user)
 
@@ -609,12 +613,12 @@ def follow():
     profile_name, profile_socket = profile_infos.nome, profile_infos.socket_id
     
     # Verifica se a relação de seguimento já existe
-    existing_follower = Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first()
+    existing_follower = Follower.query.filter_by(followed_id=user_id, follower_id=profile_id).first()
     if existing_follower:
         return redirect(f"/{profile_name}")  # Redireciona sem fazer nada
 
     # Começar a seguir
-    new_follower = Follower(user_id=user_id, follower_id=profile_id)
+    new_follower = Follower(followed_id=user_id, follower_id=profile_id)
     user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()[0]
     new_notification = Notification(
         content=f"@{user_name} começou a seguir você!", notification_type="follow", user_id=profile_id)
@@ -636,14 +640,14 @@ def unfollow():
     profile_id = request.values.get("user")
     user_id = session["user_id"]
 
-    profile = User.query.get(profile_id)
+    profile = db.session.get(User, profile_id)
     
     if profile is None:
         return error("Algo deu errado", 404)
     
-    if Follower.query.filter_by(user_id=user_id, follower_id=profile_id).first():
+    if Follower.query.filter_by(followed_id=user_id, follower_id=profile_id).first():
         # Parar de seguir 
-        Follower.query.filter_by(user_id=user_id, follower_id=profile_id).delete()
+        Follower.query.filter_by(followed_id=user_id, follower_id=profile_id).delete()
         db.session.commit()
 
     # Recarrega a página
@@ -666,11 +670,11 @@ def login():
             user = User.query.filter_by(email=name_email).first()
         else:
             user = User.query.filter_by(nome=name_email).first()
-
         if not user:
             return error("Nome ou email incorretos", 400)
 
-        if not check_password_hash(user.senha_hash, senha):
+
+        if not check_password_hash(user.senha_hash, (senha + user.password_token)):
             return error("Senha incorreta", 400)
 
         session["user_id"] = user.id
@@ -714,9 +718,12 @@ def register():
         if User.query.filter_by(email=email).first() is not None:
             return error("Email já cadastrado", 400)
 
-        senha_hash = generate_password_hash(senha)
+        characters = string.ascii_letters + string.digits
+        token = ''.join(secrets.choice(characters) for _ in range(32))
 
-        new_user = User(nome=username, email=email, senha_hash=senha_hash)
+        senha_hash = generate_password_hash(senha+token)
+
+        new_user = User(nome=username, email=email, senha_hash=senha_hash, password_token=token)
         db.session.add(new_user)
         db.session.commit()
 
@@ -724,37 +731,6 @@ def register():
 
     return render_template("register.html")
 
-
-@app.route("/logout")
-@login_required
-def logout():
-    session.clear()
-
-    return redirect("/login")
-
-@app.route("/like")
-@login_required
-def like():
-    post_id = request.args.get("post_id")
-    user_id = session.get("user_id")
-    if post_id:
-        like = Like.query.filter(Like.user_id==user_id, Like.post_id==post_id).first()
-        if not like:
-            new_like = Like(user_id=user_id, post_id=post_id)
-            db.session.add(new_like)
-            action = "like"
-        else:
-            action = "dislike"
-            db.session.delete(like)
-
-        db.session.commit()
-
-        like_count = Like.query.filter_by(post_id=post_id).count()
-        print(f"contagem de likes do post {post_id} é {like_count}")
-        return jsonify({"postId":post_id, "likeCount":like_count, "action":action})
-    else:
-        return jsonify({"error": "Algo deu errado"}), 404
-    
 
 # CHECAGEM DE INFORMAÇÕES DE INPUTS
 
@@ -823,11 +799,42 @@ def checkPassword():
         user = User.query.filter_by(nome=name_email).first()
 
     # Verifica a senha
-    if user and check_password_hash(user.senha_hash, senha):
+    if user and check_password_hash(user.senha_hash, (senha+user.password_token)):
         return (jsonify(isRight=True))
 
     return jsonify(isRight=False)
 
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    session.clear()
+
+    return redirect("/login")
+
+@app.route("/like")
+@login_required
+def like():
+    post_id = request.args.get("post_id")
+    user_id = session.get("user_id")
+    if post_id:
+        like = Like.query.filter(Like.user_id==user_id, Like.post_id==post_id).first()
+        if not like:
+            new_like = Like(user_id=user_id, post_id=post_id)
+            db.session.add(new_like)
+            action = "like"
+        else:
+            action = "dislike"
+            db.session.delete(like)
+
+        db.session.commit()
+
+        like_count = Like.query.filter_by(post_id=post_id).count()
+        print(f"contagem de likes do post {post_id} é {like_count}")
+        return jsonify({"postId":post_id, "likeCount":like_count, "action":action})
+    else:
+        return jsonify({"error": "Algo deu errado"}), 404
 
 @app.context_processor
 def inject_user():

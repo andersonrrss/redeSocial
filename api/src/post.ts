@@ -3,6 +3,17 @@ let container : any = null;
 let img : any = null;
 let exitBtn : any = null;
 // Função do evento de clique adicionado via html
+document.querySelectorAll(".fullScreenBtn").forEach(fullScreenBtn => {
+    fullScreenBtn.addEventListener("click", () => {
+        fullScreen(fullScreenBtn)
+    })
+});
+document.querySelectorAll('.like-button').forEach(button => {
+    button.addEventListener('click', () => {
+        likePost(button)
+    });
+});
+
 function fullScreen(btn : any) {
     btn = btn as HTMLButtonElement
     const image = btn.parentElement.querySelector("img") as HTMLImageElement;
@@ -100,11 +111,9 @@ if (postsTexts.length > 0) { // Verifica se existem postagens
     });
 }
 
-document.querySelectorAll('.like-button').forEach(button => {
-    console.log("evento adiconado")
-    button.addEventListener('click', () => {
-        console.log("click")
-        const postId = (button as HTMLElement).getAttribute('post-id');
+
+function likePost(button : any){
+    const postId = (button as HTMLElement).getAttribute('post-id');
         try {
             fetch(`/like?post_id=${postId}`)
             .then(response => response.json())
@@ -131,5 +140,4 @@ document.querySelectorAll('.like-button').forEach(button => {
         } catch {
             alert("Algo deu errado")
         }
-    });
-});
+}
