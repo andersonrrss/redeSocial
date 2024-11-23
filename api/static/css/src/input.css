@@ -13,7 +13,9 @@
   display: flex;
   justify-content: center;
   font: normal 14px;
-  @apply bg-white sm:bg-[#eeeeee]
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Suporte para navegadores WebKit */
+  @apply bg-white sm:bg-[#eeeeee];
   }
   .h-screen-dynamic{
     height: 100dvh;
@@ -34,11 +36,12 @@
   .notificacao {
     display: flex;
     justify-content: space-between;
-    @apply p-1 m-1 border-t border-gray-200;
+    width: 100%;
+    transition: all 500ms;
+    @apply p-2 pl-3 border-t border-gray-200;
   }
-  .nova_notification {
-    @apply rounded-md;
-    border: solid 2px #c084fc;
+  .notificacao:hover{
+    background-color: #dfdfdf
   }
   .standard-input {
     outline: none;

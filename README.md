@@ -1,4 +1,4 @@
-# Rede Social(ainda vou escolher um nome melhor)
+# Rede Social - Lily
 
 Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pessoas, postar publicações e conversar.
 ## Como rodar?
@@ -23,7 +23,7 @@ Uma rede social não muito sofisticada, com apenas o "essencial", como seguir pe
 3. `helpers.py` contém algumas funções úteis que são usadas no `app.py` _eu preciso usar mais esse arquivo_
 4. `requirements.txt` é o arquivo que armazena todas as dependências dos códigos em Python, use-o para instalar as bibliotecas necessárias usando o comando `pip install -r requirements.txt`
 ### Arquivos `.html`
-*TODOS* os arquivos ´.html´ estão dentro da pasta ´template´. O código `macros.html` é quase um `helpers.py` guardando alguns códigos jinja tanto para melhorar a legibilidade do código quanto para evitar que eu copie o mesmo código várias vezes(como o macro `render_post`).
+*TODOS* os arquivos `.html` estão dentro da pasta `template`. O código `macros.html` é quase um `helpers.py` guardando alguns códigos jinja tanto para melhorar a legibilidade do código quanto para evitar que eu copie o mesmo código várias vezes(como o macro `render_post`).
 
 ### Pasta `static`
 Dentro da pasta `static` estão todos os arquivos `.css`, `.js` e todos os arquivos de fotos da rede social como as fotos de perfil e as fotos dos posts

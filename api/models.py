@@ -29,11 +29,13 @@ class User(db.Model):
     
     posts = db.relationship('Post', backref='user', lazy=True)
 
-    followers = db.relationship(
+    # Relacionamento para obter os usuários que o usuário está seguindo
+    following = db.relationship(
         'User', secondary='followers',
-        primaryjoin=(id == Follower.follower_id),
-        secondaryjoin=(id == Follower.followed_id),
-        backref='following'
+        primaryjoin=(Follower.follower_id == id),
+        secondaryjoin=(Follower.followed_id == id),
+        backref=db.backref('followers', lazy='dynamic'),
+        lazy='dynamic'
     )
 
 class Chat(db.Model):
@@ -81,11 +83,12 @@ class Message(db.Model):
 class Notification(db.Model):
     __tablename__ = "notifications"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    notification_type = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Usuário que recebeu a notficiação
+    type = db.Column(db.String(50), nullable=False)  # Tipo da notificação ('new_follower', 'like', etc.)
+    sender_id = db.Column(db.Integer, nullable=False)  # Usuário que originou a notificação (quem seguiu ou curtiu)
+    post_id = db.Column(db.Integer, nullable=True)  # Se for 'like', armazena o ID do post
     view = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now())
 
 # Criar índices
 db.Index('idx_follower_user_id', Follower.followed_id)
