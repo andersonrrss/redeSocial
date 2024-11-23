@@ -1,29 +1,4 @@
-.navbar {
-  position: fixed;
-  display: flex;
-  justify-content: space-between;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%);
-  transition: width 500ms;
-}
-.navbar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  width: 35px;
-  margin: 4px 0;
-  transition: all 500ms;
-}
-.navbar-btn:hover {
-  background-color: #f3e8ff;
-}
 
-.disabled {
-  background-color: #865daa !important;
-  color: #b8b8b8 !important;
-}
 
 /* From uiverse.io by @satyamchaudharydev */
 /* removing default style of button */

@@ -13,10 +13,34 @@
   display: flex;
   justify-content: center;
   font: normal 14px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* Suporte para navegadores WebKit */
   @apply bg-white sm:bg-[#eeeeee];
   }
+  .navbar {
+    position: fixed;
+    display: flex;
+    justify-content: space-between;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%);
+  }
+  .navbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    width: 35px;
+    margin: 4px 0;
+    transition: all 500ms;
+  }
+  .navbar-btn:hover {
+    background-color: #f3e8ff;
+  }
+  
+  .disabled {
+    background-color: #865daa !important;
+    color: #b8b8b8 !important;
+  }
+
   .h-screen-dynamic{
     height: 100dvh;
   }

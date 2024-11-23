@@ -3,7 +3,7 @@ import re
 import string
 import secrets
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, redirect, request, session, url_for
 from flask_migrate import Migrate
 from flask_session import Session
@@ -93,7 +93,7 @@ def add():
         image = request.files['image']
         if text or image:
             if not text or len(text.strip()) == 0:
-                text = None # Garante que text seja None se o usuário não digitar nada
+                text = "" # Garante que text seja None se o usuário não digitar nada
 
             # Cria o novo post
             new_post = Post(
@@ -446,7 +446,7 @@ def user(username):
     if result.posts:
         result.posts = sorted(result.posts, key=lambda post: post.created_at, reverse=True)
         for post in result.posts:
-            post.content = post.content.replace("\n", "<br>")
+            post.content = post.content.replace("\n", "<br>") 
             post.like_count = post.likes.count() 
             like = Like.query.filter(Like.user_id == session.get("user_id"), Like.post_id == post.id).first()
             if like is not None:
@@ -635,7 +635,7 @@ def follow():
     ).first()
     if existing_notification:
         existing_notification.view = False
-        existing_notification.timestamp = datetime.now()
+        existing_notification.timestamp = datetime.now(timezone.utc)
     else:
         db.session.add(new_notification)
 

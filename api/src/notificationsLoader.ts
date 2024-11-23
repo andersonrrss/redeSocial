@@ -70,7 +70,7 @@ fetch("/notifications", {
                 <span class="font-semibold mr-2 ">@${notification.senderName}</span> começou a seguir você!
               </div>
               <div class="text-sm">${tempo.getHours()}:${tempo.getMinutes()} 
-              - ${tempo.getDay()< 10? `0${tempo.getDay()}`: tempo.getDay()}/${tempo.getMonth()}</div>
+              - ${tempo.getDate()< 10? `0${tempo.getDate()}`: tempo.getDate()}/${tempo.getMonth()+1}</div>
             </a>`;
     }
   }
