@@ -145,7 +145,7 @@ def add():
             else:
                 # ISSO É REALMENTE NECESSÁRIO?
                 image_path = None # Garante que o image path seja None se o usuário não colocou nenhuma imagem
-
+            new_post.created_at = datetime.now(timezone.utc)
             db.session.commit()
 
             return redirect(f"/{session.get("name")}")
@@ -308,7 +308,8 @@ def send_message():
         sender_id= sender_id,
         receiver_id= receiver_id,
         message= message_content,
-        parent_id= parent_id
+        parent_id= parent_id, 
+        timestamp= datetime.now(timezone.utc)
     )
     chat = Chat.query.get(chat_id)
     # Se algum usuário deletou o chat então ele será mostrado novamente
@@ -446,6 +447,7 @@ def user(username):
     if result.posts:
         result.posts = sorted(result.posts, key=lambda post: post.created_at, reverse=True)
         for post in result.posts:
+            print(post.created_at)
             post.content = post.content.replace("\n", "<br>") 
             post.like_count = post.likes.count() 
             like = Like.query.filter(Like.user_id == session.get("user_id"), Like.post_id == post.id).first()
@@ -468,15 +470,6 @@ def user(username):
         "posts": result.posts,
         "its_me": result.id == session.get("user_id")
     }
-    """     if user["followers"] is not None:
-        user["followers"] = len(user["followers"])
-    else:
-        user["followers"] = 0
-
-    if user["followed"] is not None:
-        user["followed"] = len(user["followed"])
-    else:
-        user["followed"] = 0 """
 
     profile_id = user["id"]
     user_id = session.get("user_id") # ID do usuário(eu) 
@@ -621,13 +614,13 @@ def follow():
 
     # Começar a seguir
     new_follower = Follower(followed_id=followed_id, follower_id=user_id)
-    user_name = User.query.filter_by(id=user_id).with_entities(User.nome).first()[0]
     
     db.session.add(new_follower)
     new_notification = Notification(
         user_id=followed_id,
         sender_id=user_id,
         type= "new_follower",
+        timestamp= datetime.now(timezone.utc)
         )
     # Verifica se a notificação já existe
     existing_notification = Notification.query.filter(

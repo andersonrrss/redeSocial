@@ -62,15 +62,16 @@ fetch("/notifications", {
       case "new_follower":
         return `<a href="/${notification.senderName}" class="notificacao">
               <div class="flex justify-center items-center">
-                <svg class="mr-2" xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24">
+                <svg class="mr-2" xmlns="http://www.w3.org/2000/svg" width="1.3em" height="1.3em" viewBox="0 0 24 24">
                   <g fill="none" stroke="#7e22ce" stroke-linecap="round" stroke-width="1.8"><path stroke-linejoin="round" d="M12.125 14.719c-3.6 0-7.62 2.928-7.62 6.526m7.62-9.785a4.36 4.36 0 0 0 4.035-2.683a4.355 4.355 0 0 0-3.17-5.948a4.362 4.362 0 0 0-5.215 4.274a4.356 4.356 0 0 0 4.35 4.357"/>
                       <path stroke-miterlimit="10" d="M16.488 14.983v5.997m-2.993-2.992h6"/>
                   </g>
                 </svg>
-                <span class="font-semibold mr-2 ">@${notification.senderName}</span> começou a seguir você!
+                <div> <span class="font-semibold mr-2 ">@${notification.senderName}</span> começou a seguir você! </div>
               </div>
-              <div class="text-sm">${tempo.getHours()}:${tempo.getMinutes()} 
-              - ${tempo.getDate()< 10? `0${tempo.getDate()}`: tempo.getDate()}/${tempo.getMonth()+1}</div>
+              <div class="flex items-center text-xs text-nowrap">${tempo.getHours()}:${tempo.getMinutes() < 10? `0${tempo.getMinutes()}`:tempo.getMinutes()} 
+                - ${tempo.getDate()< 10? `0${tempo.getDate()}`: tempo.getDate()}/${tempo.getMonth()+1}
+              </div>
             </a>`;
     }
   }

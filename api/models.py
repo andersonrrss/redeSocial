@@ -1,5 +1,4 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
 
 db = SQLAlchemy()
 
@@ -24,7 +23,7 @@ class User(db.Model):
     senha_hash = db.Column(db.String(255), nullable=False)
     profile_pic = db.Column(db.Text, nullable=False, default='/images/profile_pics/default.jpg')
     bio = db.Column(db.String(150), default='Olá! Tudo bem?')
-    creation = db.Column(db.TIMESTAMP, default=datetime.now(timezone.utc))
+    creation = db.Column(db.TIMESTAMP)
     password_token = db.Column(db.String(32), nullable=False, unique=True)
     
     posts = db.relationship('Post', backref='user', lazy=True)
@@ -52,7 +51,7 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime)
     content = db.Column(db.String(1500))
     image_path = db.Column(db.Text)
     likes = db.relationship('Like', backref='post', lazy='dynamic')
@@ -65,7 +64,7 @@ class Comment(db.Model):
     parent_id = db.Column(db.Integer, default=0, nullable=False)
     content = db.Column(db.String(500))
     likes = db.Column(db.Integer, default=0)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime)
 
 class Message(db.Model):
     __tablename__ = "messages"
@@ -74,7 +73,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     message = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime)
     view = db.Column(db.Boolean, default=False)
     parent_id = db.Column(db.Integer, default=0)
     user1_deleted = db.Column(db.Boolean, default=False)
@@ -88,7 +87,7 @@ class Notification(db.Model):
     sender_id = db.Column(db.Integer, nullable=False)  # Usuário que originou a notificação (quem seguiu ou curtiu)
     post_id = db.Column(db.Integer, nullable=True)  # Se for 'like', armazena o ID do post
     view = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime)
 
 # Criar índices
 db.Index('idx_follower_user_id', Follower.followed_id)
