@@ -6,12 +6,15 @@
 {% endblock %}
 {% block body %}
 
-<main class="bg-white w-full md:w-3/4 text-start flex flex-col p-2 min-h-[100dvh] h-fit overflow-y: auto">
+<main class="content text-start p-2 h-fit overflow-y: auto">
     {% if posts %}
     <section class="pb-12">
         {% for post in posts %}
             {{ render_post(post)}}       
         {% endfor %}
+        <div id="commentsDiv">
+            
+        </div>
     </section>
     {% else %}
     <section class="flex justify-center items-center w-full h-[90dvh] border-gray-400 p-3">

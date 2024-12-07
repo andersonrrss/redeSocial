@@ -1,5 +1,21 @@
 declare var io: any;
 
+interface NewFollower{
+  follower_id: number
+  follower_name: string
+}
+
+interface NewMessage{
+    message_id: number,
+    content: string
+    chat_id: number
+    sender_id: number,
+    sender_name: string,
+    timestamp: Date,
+    parent_message: string,
+    parent_id: number,
+}
+
 const socket = io();
 socket.on("connect", function () {
   console.log("Server connected");
@@ -21,10 +37,6 @@ export function alertError(alertMessage: string, alertCode: number){
     })
 }
 
-interface NewFollower{
-    follower_id: number
-    follower_name: string
-}
 
 socket.on("new_follower", function (data : NewFollower) {
   if ("Notification" in window) {
@@ -44,16 +56,6 @@ socket.on("new_follower", function (data : NewFollower) {
   }
 });
 
-interface NewMessage{
-    message_id: number,
-    content: string
-    chat_id: number
-    sender_id: number,
-    sender_name: string,
-    timestamp: Date,
-    parent_message: string,
-    parent_id: number,
-}
 
 socket.on("new-message", function (data: NewMessage) {
   if ("Notification" in window) {
@@ -77,9 +79,6 @@ const navBarButtons = document.querySelectorAll(".navbar-btn") as NodeListOf<HTM
 navBarButtons.forEach((btn: HTMLAnchorElement) => {
   let btnPath = new URL(btn.href).pathname;
   if (btnPath == window.location.pathname) {
-    let paths = btn.querySelectorAll("path")
-    paths.forEach((path) => {
-      path.setAttribute("stroke", "#7101d3")
-    })
+    btn.classList.add("navbar-btn-selected")
   }
 });

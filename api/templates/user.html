@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block body %}
-    <main class="bg-white w-full md:w-3/4 text-start flex flex-col p-2 min-h-[100dvh] h-fit overflow-y: auto">
+    <main class="content text-start p-2 h-fit overflow-y: auto">
         <header class="pb-6">
             <div class="flex mt-3 pl-3 sm:pl-10">
                 <div class="mr-8 w-[140px]">
@@ -20,11 +20,11 @@
                     <div class="flex items-center flex-wrap">
                         <h2 class="text-[18px] font-semibold mr-5">@{{ user["name"] }}</h2>
                         <div class="flex text-[14px] md:text-[16px]">
-                            <a href="/{{ user['name'] }}/followers" class="text-center mr-5 flex items-center hover:underline">
+                            <a href="/{{ user['name'] }}/followers" class="followers text-center mr-5 flex items-center hover:underline">
                                 <span class="self-center mr-2">{{ user["followers"]}}</span> 
                                 seguidores
                             </a>
-                            <a href="/{{ user['name'] }}/following" class="text-center flex items-center hover:underline">
+                            <a href="/{{ user['name'] }}/following" class="follows text-center flex items-center hover:underline">
                                 <span class="self-center mr-2">{{ user["following"]}} </span> 
                                 seguindo
                             </a>

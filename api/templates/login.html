@@ -1,4 +1,4 @@
-{% extends "layout.html" %} {% block title %} Entrar {% endblock %} {% block
+{% extends "layout_no_navbar.html" %} {% block title %} Entrar {% endblock %} {% block
     script %}
     <script src="../static/js/sing.js" defer></script>
     <script src="../static/js/login_check.js" defer></script>
@@ -49,13 +49,6 @@
         </div>
       </section>
     </main>
-    <!-- Oculta a navbar padrão do site -->
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        navbar = document.querySelector(".navbar");
-        navbar.style.display = "none";
-        window.localStorage.removeItem("searchHistory");
-      });
-    </script>
+    
     {% endblock %}
     

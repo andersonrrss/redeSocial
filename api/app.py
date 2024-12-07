@@ -283,9 +283,9 @@ def delete_chat():
     else:
         return error("Algo deu errado", 500)
     
-@app.route("/comments")
+@app.route("/get_comments")
 @login_required
-def comments():
+def get_comments():
     post_id = request.args.get("post_id")
     comments = None
     return render_template("comments.html", comments=comments)
@@ -560,40 +560,35 @@ def following(username):
 def follows():
     username = request.values.get("username")  
     user = User.query.filter_by(nome=username).first()
+    
+    
     if not user:
         return error("Usuário não encontrado")
     
-    
     # GET pede os seguidores
     if request.method == "GET":
-        # Checa se o usuário tem seguidores
-        user_followers_ids = user.followers
+        user_followers = user.followers.all()
 
-        if not user_followers_ids:
+        if not user_followers:
             return jsonify(has_follows=False)
-        # Transformar a lista de tuplas em uma lista de IDs
-        followers_ids = [follower.id for follower in user_followers_ids]
 
-        followers_users = User.query.filter(User.id.in_(followers_ids)).all()
-        followers_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in followers_users]
+        # Agora pega as informações dos seguidores diretamente
+        followers_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in user_followers]
 
         return jsonify(has_follows=True, follows_infos=followers_users)
 
     # POST pede os seguidos
     else:
-        # Checa se o usuário segue alguém
-        user_following_ids = user.following
+        user_following = user.following.all()
 
-        if not user_following_ids:
+        if not user_following:
             return jsonify(has_follows=False)
         
-        # Transformar a lista de tuplas em uma lista de IDs
-        following_ids = [followed.id for followed in user_following_ids]
-
-        following_users = User.query.filter(User.id.in_(following_ids)).all()
-        following_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in following_users]
+        # Agora pega as informações dos seguidos diretamente
+        following_users = [{"id": u.id, "nome": u.nome, "email": u.email, "profile_pic": u.profile_pic} for u in user_following]
 
         return jsonify(has_follows=True, follows_infos=following_users)
+
 
 
 @app.route("/follow")

@@ -8,11 +8,17 @@ document.querySelectorAll(".fullScreenBtn").forEach(fullScreenBtn => {
         fullScreen(fullScreenBtn)
     })
 });
-document.querySelectorAll('.like-button').forEach(button => {
+document.querySelectorAll('.likeButton').forEach(button => {
     button.addEventListener('click', () => {
         likePost(button)
     });
 });
+
+document.querySelectorAll('.commentButton').forEach(button => {
+    button.addEventListener("click", () => {
+        showComments(button)
+    })
+})
 
 function fullScreen(btn : any) {
     btn = btn as HTMLButtonElement
@@ -111,9 +117,8 @@ if (postsTexts.length > 0) { // Verifica se existem postagens
     });
 }
 
-
 function likePost(button : any){
-    const postId = (button as HTMLElement).getAttribute('post-id');
+    const postId = (button as HTMLElement).getAttribute('post_id');
         try {
             fetch(`/like?post_id=${postId}`)
             .then(response => response.json())
@@ -140,4 +145,11 @@ function likePost(button : any){
         } catch {
             alert("Algo deu errado")
         }
+}
+
+function showComments(commentButton : any){
+    commentButton = commentButton as HTMLButtonElement
+
+    let postId = commentButton.getAttribute("post_id")
+    console.log(postId)
 }
