@@ -1,0 +1,32 @@
+{% extends "layout_no_navbar.html" %} {% block title %} {{ profile_name }} {% endblock %}
+{% block script %}
+<script src="../static/js/follows_followers.js" defer></script>
+{% endblock %} {% block body %}
+<main class="h-full w-full md:w-3/4 bg-white py-2">
+  <header class="w-full flex justify-between p-2 border-b border-gray-300">
+      <div></div>
+      <h2 class="text-center p-3 font-bold text-xl text-purple-900">
+        Seguidores
+      </h2>
+      <a href="/{{profile_name}}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z" />
+        </svg>
+      </a>
+  </header>
+  <section id="show_follows" class="text-center mt-2">
+    {% if followers %}
+      {% for follower in followers %}
+          <a href="/{{follower.name}}" class="flex justify-start items-center w-full p-3 h-[60px] hover:bg-gray-200">
+            <img src="{{ url_for('static', filename=follower['profile_pic']) }}" class="max-w-full rounded-full h-full mr-2"> 
+            <span class="font-semibold">@{{follower.name}}</span>
+          </a>
+      {% endfor %}
+    {% else %}
+      <span class="font-semibold">{{ profile_name }} ainda não é seguido por ninguém...</span>
+    {% endif %}
+  </section>
+</main>
+<input type="hidden" value="{{ profile_name }}" id="username" />
+<input type="hidden" value="get" id="method" />
+{% endblock %}

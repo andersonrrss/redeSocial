@@ -1,0 +1,75 @@
+<div id="id_{{ post['id'] }}" class="post p-3 py-3 border-b border-gray-400">
+    <a  href="/{{ post.user.nome }}" class="flex justify-start items-center font-semibold p-1 w-[50%]">
+        <img src="{{ url_for('static', filename=post.user['profile_pic']) }}" class="w-10 rounded-full mr-2" alt="">
+        <span class="block overflow-hidden whitespace-nowrap text-ellipsis">@{{ post.user.name }}</span>
+    </a>
+    <!-- POSTS COM IMAGENS -->
+    {% if post['image_path'] %}
+    <div class="min-w-[50%] w-fit h-[350px] relative flex justify-center">
+        <img src="{{ url_for('static', filename=post.image_path) }}" class="rounded-lg" style="object-fit: cover; object-position: center; width: 100%; max-height: 100%;">
+        <button class="fullScreenBtn absolute bottom-3 right-3 text-white cursor-pointer hover:text-gray-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 24 24">
+                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2m10 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+                <rect width="10" height="8" x="7" y="8" rx="1"/></g>
+            </svg>
+        </button>
+    </div>
+    <div class="flex my-2">
+        <!-- BOTÃO DE LIKE -->
+        <button class="text-black mr-2 likeButton" post_id="{{ post['id'] }}">
+            {% if post['liked'] %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48">
+                    <path fill="#ff3838" stroke="#ff3838" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                </svg>
+            {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" >
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                </svg>
+            {%endif%}
+        </button>
+        <!-- BOTÃO DOS COMENTÁRIOS -->
+        <button class="commentButton" post_id="{{ post['id'] }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 16 16">
+                <path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.75.75 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+            </svg>
+        </button>
+        <span class="ml-5 like-counter">
+            {{ post.like_count }} curtidas
+        </span>
+    </div>
+    <!-- TEXTO DO POST -->
+    <div class="post-text imagePostText">
+        <p class="max-w-[100%] imagePostContent whitespace-pre-wrap" style="word-wrap: break-word; overflow-wrap: break-word;">{{ post['content'].lstrip() }}</p>
+        <button class="hidden readMoreBtn">Ler mais</button>
+    </div>
+    <!-- POST APENAS DE TEXTOS -->
+    {% else %}
+        <!-- CONTEÚDO DO POST -->
+        <p class="max-w-[100%]" style="word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;">{{ post['content'].lstrip() }}</p>
+        <div class="flex mt-2">
+            <!-- BOTÃO DE LIKE -->
+            <button class="text-black mr-2 likeButton" post_id="{{ post['id'] }}">
+                {% if post['liked'] %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48">
+                        <path fill="#ff3838" stroke="#ff3838" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                    </svg>
+                {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" >
+                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/>
+                    </svg>
+                {%endif%}
+            </button>
+            <!-- BOTÃO DO COMENTÁRIOS -->
+            <button class="commentButton" post_id="{{ post['id'] }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 16 16">
+                    <path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.75.75 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+                </svg>
+            </button>
+            
+            <span class="ml-5 like-counter">
+                {{ post.like_count }} curtidas
+            </span>
+        </div>
+    {% endif %}
+</div>

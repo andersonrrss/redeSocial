@@ -1,5 +1,5 @@
 # Python cache files
-api/__pycache__/
+app/**/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -37,7 +37,9 @@ coverage/
 *.lcov
 
 # Images posts
-posts
+app/static/images/posts
+profile_pics/*
+!profile_pics/default.jpg
 
 # TailwindCSS output
 api/static/css/output.css

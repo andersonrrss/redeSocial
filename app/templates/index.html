@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block script %}
+<script type="module" src="../static/js/posts/loadPosts.js"></script>
+<script type="module" src="../static/js/posts/post.js" defer></script>
+{% endblock %}
+{% block body %}
+
+<main class="content text-start p-2 h-fit overflow-y: auto">
+    <section class="pb-12" id="posts-container" context="feed"></section>
+</main>
+
+{% endblock %}

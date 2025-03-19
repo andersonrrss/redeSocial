@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% from 'macros/user_macro.html' import load_buttons %}
+
+{% block title %}
+    {{ user["name"] }}
+{% endblock %}
+
+{% block script %}
+<script src="../../static/js/posts/loadPosts.js" type="module" defer></script>
+<script src="../../static/js/posts/post.js" type="module" defer></script>
+{% endblock %}
+
+{% block body %}
+    <main class="content text-start p-2 h-fit overflow-y: auto">
+        <header class="pb-6 border-b border-gray-400">
+            <div class="flex mt-3 pl-3 sm:pl-10">
+                <div class="mr-8 w-[140px]">
+                    <img src="{{ url_for('static', filename=user['profile_pic']) }}" class="w-full rounded-full">
+                </div>
+                <div class="mt-5">
+                    <div class="flex items-center flex-wrap">
+                        <h2 class="text-[18px] font-semibold mr-5">@{{ user["name"] }}</h2>
+                        <div class="flex text-[14px] md:text-[16px]">
+                            <a href="/{{ user['name'] }}/followers" class="followers text-center mr-5 flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["followers_count"]}}</span> 
+                                seguidores
+                            </a>
+                            <a href="/{{ user['name'] }}/following" class="follows text-center flex items-center hover:underline">
+                                <span class="self-center mr-2">{{ user["following_count"]}} </span> 
+                                seguindo
+                            </a>
+                        </div>
+                    </div>
+                        <div class="block max-w-[%] my-3 text-[15px] text-justify">
+                            <p style="word-wrap: break-word; overflow-wrap: break-word;" class="max-w-full">{{ user['bio'] | safe }}</p>
+                        </div>
+                </div>
+            </div>
+            
+            <div class="mt-5 flex sm:px-3">
+                {{ load_buttons(user) }}
+            </div>
+        </div>
+        </header>
+        <section id="posts-container" username="{{ user.name }}" context="user_posts"></section>
+    </main>
+{% endblock %}
