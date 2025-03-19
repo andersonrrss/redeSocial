@@ -8,12 +8,12 @@ migrations/
 
 # Flask specific
 instance
-api/instance
+app/instance
 .webassets-cache
 flask_session
 
 # TypeScript output
-api/static/js/
+app/static/js/
 *.js
 *.js.map
 
@@ -42,4 +42,4 @@ profile_pics/*
 !profile_pics/default.jpg
 
 # TailwindCSS output
-api/static/css/output.css
+app/static/css/output.css
